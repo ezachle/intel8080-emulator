@@ -1,6 +1,19 @@
 #pragma once 
-
 #include <stdint.h>
+
+typedef struct {
+    union { 
+        bool carry: 1;
+        bool unused1: 1; // always 1
+        bool parity: 1;
+        bool unused2: 1; // always 0
+        bool aux_carry: 1;
+        bool unused3: 1; // always 1
+        bool zero: 1;
+        bool sign: 1;
+        uint8_t flags;
+    };
+} flags_t;
 
 typedef struct {
     union {
@@ -30,7 +43,7 @@ typedef struct {
     union {
         uint16_t psw;
         struct {
-            uint8_t     f;       // cast to flags_t
+            flags_t     f;
             uint8_t     a;      // accumulator
         };
     };
