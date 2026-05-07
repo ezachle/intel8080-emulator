@@ -198,7 +198,7 @@ typedef enum {
     NONE,
 } FLAGS;
 
-static void modify_flags_szap(uint8_t value, registers_t *regs, const uint8_t flag_access) {
+static void modify_flags_szap(uint16_t value, registers_t *regs, const uint8_t flag_access) {
     if(HAS_ACCESS(flag_access, SIGN)) {
         regs->f.sign = (value & (1 << SIGN));
     }
@@ -220,9 +220,9 @@ static void modify_flags_szap(uint8_t value, registers_t *regs, const uint8_t fl
     }
 
     // Check for carry
-    //if(CHECK_BIT(regs->f, CARRY)) {
-    //    SET_FLAG(regs->f, CARRY);
-    //}
+    if(HAS_ACCESS(flag_access, CARRY)) {
+        cpu->regs.f.carry = (t & 0xFF00) ? 1 : 0;
+    }
 }
 
 
@@ -636,8 +636,7 @@ void add(intel8080 *cpu) {
 #endif
 
     uint16_t t = cpu->regs.a + *reg_ptr;
-    modify_flags_szap(*reg_ptr, &cpu->regs, ii.flag_access);
-    cpu->regs.f.carry = (t & 0xFF00) ? 1 : 0;
+    modify_flags_szap(t, cpu->regs, 
 
     cpu->regs.a = t;
     cpu->regs.pc += GET_INSTR_SIZE(cpu);
