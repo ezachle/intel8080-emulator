@@ -1,5 +1,6 @@
+// TODO: Include getopt
 #include <raylib.h>
-#include "flags.h"
+#include "opcode.h"
 
 void emulate_8080(intel8080 *cpu) {
     memory_t *memory = &cpu->mem;
@@ -11,15 +12,6 @@ void emulate_8080(intel8080 *cpu) {
         printf("Unimplemented opcode: %02X, PC: %04X\n", instr[0], *pc);
         *pc += 1;
     } else {
-#ifdef DEBUG
-        printf("Instruction: %-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
-               ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
-        printf("    Data:");
-        for(uint8_t i = 0; i < ii.op_bytes; i++) {
-            printf(" %02X", *(instr+i));
-        }
-        printf("\n");
-#endif
         if(ii.handler.f0 != NULL) {
             if(ii.op_bytes == 1) {
                 ii.handler.f0(cpu);
@@ -31,6 +23,15 @@ void emulate_8080(intel8080 *cpu) {
         } else {
             cpu->regs.pc += ii.op_bytes;
         }
+#ifdef DEBUG
+        //printf("Instruction: %-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
+        //       ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
+        printf("  Data:");
+        for(uint8_t i = 0; i < ii.op_bytes; i++) {
+            printf(" %02X", *(instr+i));
+        }
+        printf("\n");
+#endif
     }
 }
 
