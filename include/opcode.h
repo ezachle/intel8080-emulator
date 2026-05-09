@@ -1,8 +1,5 @@
 #pragma once
-
-#include "common.h"
 #include "intel8080.h"
-#include "registers.h"
 
 #define MAKE_FLAG(S, Z, A, P, C)    \
     (uint8_t)((uint8_t)(S << 7) | \
@@ -34,27 +31,58 @@ typedef struct {
     opcode_func_t handler;
 } instr_info_t;
 
+// ===== Data Transfer Group =====
 void mov(intel8080 *cpu);
 void mvi(intel8080 *cpu, uint8_t data);
 
-void pop_register(intel8080 *cpu);
-void push_register(intel8080 *cpu);
-void lxi(intel8080 *cpu, uint16_t data);
-
-void ldax(intel8080 *cpu, uint8_t data);
+// Load/store data from accumulator
+void sta(intel8080 *cpu, uint16_t addr);
 void lda(intel8080 *cpu, uint16_t addr);
 
+// Load/store data from H and L register
 void shld(intel8080 *cpu, uint16_t addr);
 void lhld(intel8080 *cpu, uint16_t addr);
-void dad(intel8080 *cpu);
 
+// Note: X denotes a register
+void stax(intel8080 *cpu);
+void ldax(intel8080 *cpu);
+void lxi(intel8080 *cpu, uint16_t data);
+
+void xchg(intel8080 *cpu);
+void xthl(intel8080 *cpu);
+// XCHG // Swaps H and L with D and E
+// XTHL // Swaps L with SP and H with SP + 1
+
+void pop_register(intel8080 *cpu);
+void push_register(intel8080 *cpu);
+
+// ===== Arithmetic Instructions Group ======
+// Add/sub to accumulator
 void add(intel8080 *cpu);
+void sub(intel8080 *cpu);
+
+// Add/sub from register to accumulator with carry
+void adc(intel8080 *cpu);
+void sbb(intel8080 *cpu);
+
+// Add/sub immediate data to accumulator
+void adi(intel8080 *cpu, uint8_t data);
+void sui(intel8080 *cpu, uint8_t data);
+
+// Add/sub immediate data to accumulator and use carry
+void aci(intel8080 *cpu, uint8_t data);
+void sbi(intel8080 *cpu, uint8_t data);
+
+// Increment/Decrement Register Pair
 void inx(intel8080 *cpu);
+void dcx(intel8080 *cpu);
+
+// Increment/Decerement the value at the register
 void inr(intel8080 *cpu);
 void dcr(intel8080 *cpu);
 
-void stax(intel8080 *cpu);
-void sta(intel8080 *cpu, uint16_t addr);
+// Double Add
+void dad(intel8080 *cpu);
 
 void jmp(intel8080 *cpu, uint16_t addr);
 void jz(intel8080 *cpu, uint16_t addr);
