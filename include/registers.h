@@ -1,17 +1,16 @@
 #pragma once 
 #include <stdint.h>
 
-typedef struct {
-    union { 
-        bool carry: 1;
-        bool unused1: 1; // always 1
-        bool parity: 1;
-        bool unused2: 1; // always 0
-        bool aux_carry: 1;
-        bool unused3: 1; // always 1
-        bool zero: 1;
-        bool sign: 1;
-        uint8_t flags;
+typedef union { 
+    struct {
+        uint8_t carry: 1;
+        uint8_t unused1: 1; // always 1
+        uint8_t parity: 1;
+        uint8_t unused2: 1; // always 0
+        uint8_t aux_carry: 1;
+        uint8_t unused3: 1; // always 1
+        uint8_t zero: 1;
+        uint8_t sign: 1;
     };
 } flags_t;
 
