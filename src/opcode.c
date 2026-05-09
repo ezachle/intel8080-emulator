@@ -2,10 +2,10 @@
 #include "opcode.h"
 
 const instr_info_t opcode_map[0xFF] = {
-    [0x00] = {"NOP", 1, 4, MAKE_FLAG_NONE},
-    [0x10] = {"NOP", 1, 4, MAKE_FLAG_NONE},
-    [0x20] = {"NOP", 1, 4, MAKE_FLAG_NONE},
-    [0x30] = {"NOP", 1, 4, MAKE_FLAG_NONE},
+    [0x00] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
+    [0x10] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
+    [0x20] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
+    [0x30] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
 
     [0xCB] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
     [0xC3] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
@@ -485,7 +485,7 @@ void xthl(intel8080 *cpu) {
 void jmp(intel8080 *cpu, uint16_t data) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.bc, "%s: Jumping to address 0x%04X", ii.instruction, data);
+    LOG_DEBUG(cpu->regs.pc, "%s: Jumping to address 0x%04X", ii.instruction, data);
 #endif
     cpu->regs.pc = data;
 }
@@ -495,7 +495,7 @@ void jz(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JZ to address 0x%04X; Result: %d", addr, cpu->regs.f.zero);
 #endif
     if(cpu->regs.f.zero) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jc(intel8080 *cpu, uint16_t addr) {
@@ -503,7 +503,7 @@ void jc(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JC to address 0x%04X; Result: %d", addr, cpu->regs.f.carry);
 #endif
     if(cpu->regs.f.carry) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jpe(intel8080 *cpu, uint16_t addr) {
@@ -511,7 +511,7 @@ void jpe(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JPE to address 0x%04X; Result: %d", addr, cpu->regs.f.parity);
 #endif
     if(cpu->regs.f.parity) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jm(intel8080 *cpu, uint16_t addr) {
@@ -519,7 +519,7 @@ void jm(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JM to address 0x%04X; Result: %d", addr, cpu->regs.f.sign);
 #endif
     if(cpu->regs.f.sign) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jnz(intel8080 *cpu, uint16_t addr) {
@@ -527,7 +527,7 @@ void jnz(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JNZ to address 0x%04X; Result: %d", addr, !cpu->regs.f.zero);
 #endif
     if(!cpu->regs.f.zero) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jnc(intel8080 *cpu, uint16_t addr) {
@@ -535,7 +535,7 @@ void jnc(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JNC to address 0x%04X; Result: %d", addr, !cpu->regs.f.carry);
 #endif
     if(!cpu->regs.f.carry) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jpo(intel8080 *cpu, uint16_t addr) {
@@ -543,7 +543,7 @@ void jpo(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JPO to address 0x%04X; Result: %d", addr, !cpu->regs.f.parity);
 #endif
     if(!cpu->regs.f.parity) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jp(intel8080 *cpu, uint16_t addr) {
@@ -551,7 +551,7 @@ void jp(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "JP to address 0x%04X; Result: %d", addr, !cpu->regs.f.sign);
 #endif
     if(!cpu->regs.f.sign) cpu->regs.pc = addr;
-    else cpu->regs.pc += 1;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void lxi(intel8080 *cpu, uint16_t data) {
@@ -590,8 +590,8 @@ static void push_stack(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Pushing PC(0x%04X) at SP 0x%04X", ii.instruction, cpu->regs.pc, cpu->regs.sp);
 #endif
-    cpu->regs.sp += 2;
-    cpu->mem.data[cpu->regs.sp] = cpu->regs.pc;
+    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 8) & 0xFF;
+    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 0) & 0xFF;
 }
 
 void push_register(intel8080 *cpu) {
@@ -623,13 +623,16 @@ void push_register(intel8080 *cpu) {
             break;
     }
 
+    //*reg_ptr = cpu->mem.data[cpu->regs.sp];
+    *reg_ptr = ((cpu->mem.data[cpu->regs.sp-1] << 0) & 0xFF) |
+               ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
     cpu->regs.sp += 2;
-    *reg_ptr = cpu->mem.data[cpu->regs.sp];
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 static void pop_stack(intel8080 *cpu) {
-    cpu->regs.pc = cpu->mem.data[cpu->regs.sp];
+    cpu->regs.pc = ((cpu->mem.data[cpu->regs.sp-1] << 0) & 0xFF)|
+                   ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
     cpu->regs.sp -= 2;
 }
 
@@ -662,7 +665,9 @@ void pop_register(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) at SP 0x%04X", ii.instruction, *reg_ptr, cpu->regs.sp);
 #endif
 
-    *reg_ptr = cpu->mem.data[cpu->regs.sp];
+
+    *reg_ptr = (cpu->mem.data[cpu->regs.sp-1] & 0x00FF) |
+               ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
     modify_flags(*reg_ptr, &cpu->regs, ii.flag_access);
 
     cpu->regs.sp -= 2;
@@ -670,18 +675,17 @@ void pop_register(intel8080 *cpu) {
 }
 
 void ret(intel8080 *cpu) {
+    pop_stack(cpu);
+    cpu->regs.pc += INSTR_SIZE(cpu);
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Returning to address at 0x%04X", ii.instruction, cpu->mem.data[cpu->regs.sp]);
+    LOG_DEBUG(cpu->regs.pc, "%s: Returning to address at 0x%04X", ii.instruction, cpu->regs.pc);
 #endif
-
-    pop_stack(cpu);
 }
 
 void call(intel8080 *cpu, uint16_t data) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    //LOG_DEBUG(cpu->regs.pc, "%s: Pushing current PC at SP (0x%04X)", ii.instruction, cpu->regs.sp);
     LOG_DEBUG(cpu->regs.pc, "%s: Calling method at address 0x%04X", ii.instruction, data);
 #endif
     push_stack(cpu);
