@@ -23,6 +23,7 @@ typedef struct {
     registers_t regs;
     char        rom_name[1024];
     uint16_t    rom_size;
+    uint64_t    cycles;
 
     struct {
         bool        display[SCREEN_WIDTH*SCREEN_HEIGHT];

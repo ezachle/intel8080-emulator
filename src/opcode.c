@@ -204,6 +204,49 @@ const instr_info_t opcode_map[0xFF] = {
     [0X12] = {"STAX D", 1, 7, MAKE_FLAG_NONE, {.f0 = stax}},
     [0xE3] = {"XTHL", 1, 18, MAKE_FLAG_NONE, {.f0 = xthl}},
     [0xEB] = {"XCHG", 1, 5, MAKE_FLAG_NONE, {.f0 = xchg}},
+
+    // ==== Logical Group ====
+    [0xA0] = {"ANA B", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
+    [0xA1] = {"ANA C", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
+    [0xA2] = {"ANA D", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
+    [0xA3] = {"ANA E", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
+    [0xA4] = {"ANA H", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
+    [0xA5] = {"ANA L", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
+    [0xA6] = {"ANA M", 1, 7, MAKE_FLAG_ALL, {.f0 = ana}},
+    [0xA7] = {"ANA A", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
+
+    [0xB0] = {"ORA B", 1, 4, MAKE_FLAG_ALL, {.f0 = ora}},
+    [0xB1] = {"ORA C", 1, 4, MAKE_FLAG_ALL, {.f0 = ora}},
+    [0xB2] = {"ORA D", 1, 4, MAKE_FLAG_ALL, {.f0 = ora}},
+    [0xB3] = {"ORA E", 1, 4, MAKE_FLAG_ALL, {.f0 = ora}},
+    [0xB4] = {"ORA H", 1, 4, MAKE_FLAG_ALL, {.f0 = ora}},
+    [0xB5] = {"ORA L", 1, 4, MAKE_FLAG_ALL, {.f0 = ora}},
+    [0xB6] = {"ORA M", 1, 7, MAKE_FLAG_ALL, {.f0 = ora}},
+    [0xB7] = {"ORA A", 1, 4, MAKE_FLAG_ALL, {.f0 = ora}},
+
+    [0xE6] = {"ANI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = ani}},
+    [0xF6] = {"ORI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = ori}},
+
+    [0xA8] = {"XRA B", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xA9] = {"XRA C", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAA] = {"XRA D", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAB] = {"XRA E", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAC] = {"XRA H", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAD] = {"XRA L", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAE] = {"XRA M", 1, 7, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAF] = {"XRA A", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+
+    [0xB8] = {"CMP B", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
+    [0xB9] = {"CMP C", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
+    [0xBA] = {"CMP D", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
+    [0xBB] = {"CMP E", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
+    [0xBC] = {"CMP H", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
+    [0xBD] = {"CMP L", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
+    [0xBE] = {"CMP M", 1, 7, MAKE_FLAG_ALL, {.f0 = cmp}},
+    [0xBF] = {"CMP A", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
+
+    [0xEE] = {"XRI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = xri}},
+    [0xFE] = {"CPI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = cpi}},
 };
 
 typedef enum {
@@ -335,7 +378,7 @@ void mov(intel8080 *cpu) {
 #endif
 
     *dst = *src;
-    cpu->regs.pc += 1;
+    cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void mvi(intel8080 *cpu, uint8_t data) {
@@ -900,40 +943,101 @@ void dcx(intel8080 *cpu) {
 }
 
 void dcr(intel8080 *cpu) {
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
     registers_t *regs = &cpu->regs;
     uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
 
-    if(reg_ptr) {
-        (*reg_ptr)--;
-        modify_flags(*reg_ptr, regs, ii.flag_access);
-    }
-
 #ifdef DEBUG
-    LOG_DEBUG(regs->pc, "%s: Decrementing values ", ii.instruction);
-
-    switch(OP_DST_REG(cpu)) {
-        case REG_B:
-        case REG_C:
-            LOG_DEBUG(regs->pc, "B: 0x%02X C: 0x%02X", regs->b + 1, regs->c + 1);
-            break;
-        case REG_E:
-        case REG_D:
-            LOG_DEBUG(regs->pc, "D: 0x%02X E: 0x%02X", regs->d + 1, regs->e + 1);
-            break;
-        case REG_H:
-        case REG_L:
-            LOG_DEBUG(regs->pc, "H: 0x%02X L: 0x%02X", regs->h + 1, regs->l + 1);
-            break;
-        case REG_M:
-        case REG_A:
-            LOG_DEBUG(regs->pc, "SP: 0x%02X", regs->sp + 1);
-            break;
-        default:
-            fprintf(stderr, "ERROR Unknown DCR instruction: %2X\n", CUR_OP(cpu));
-            break;
-    };
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Decrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
 #endif
 
+    (*reg_ptr)--;
+    modify_flags(*reg_ptr, regs, FLAG_ACCESS(cpu));
     cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void ana(intel8080 *cpu) {
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+    uint8_t x = cpu->regs.a & *reg_ptr;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical AND with Accumulator(0x%02X); Result: 0x%02X", ii.instruction, cpu->regs.a, x);
+#endif
+    cpu->regs.a = x;
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void ani(intel8080 *cpu, uint8_t data) {
+    uint8_t x = cpu->regs.a & data;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical AND; Data(0x%02X) & Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
+#endif
+    cpu->regs.a = x;
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void ora(intel8080 *cpu) {
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+    uint8_t x = cpu->regs.a | *reg_ptr;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical OR with Accumulator(0x%02X); Result: 0x%02X", ii.instruction, cpu->regs.a, x);
+#endif
+    cpu->regs.a = x;
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void ori(intel8080 *cpu, uint8_t data) {
+    uint8_t x = cpu->regs.a | data;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical OR; Data(0x%02X) | Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
+#endif
+    cpu->regs.a = x;
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void xra(intel8080 *cpu) {
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+    uint8_t x = cpu->regs.a ^ *reg_ptr;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical XOR with Accumulator(0x%02X); Result: 0x%02X", ii.instruction, cpu->regs.a, x);
+#endif
+    cpu->regs.a = x;
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void xri(intel8080 *cpu, uint8_t data) {
+    uint8_t x = cpu->regs.a ^ data;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical XOR; Data(0x%02X) ^ Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
+#endif
+    cpu->regs.a = x;
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cmp(intel8080 *cpu) {
+#ifdef DEBUG
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Comparing Data(0x%02X) and Accumulator(0x%02X)", ii.instruction, *reg_ptr, cpu->regs.a);
+#endif
+    sub(cpu);
+}
+
+void cpi(intel8080 *cpu, uint8_t data) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Comparing Data(0x%02X) and Accumulator(0x%02X)", ii.instruction, data, cpu->regs.a);
+#endif
+    sui(cpu, data);
 }

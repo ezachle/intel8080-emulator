@@ -48,10 +48,8 @@ void stax(intel8080 *cpu);
 void ldax(intel8080 *cpu);
 void lxi(intel8080 *cpu, uint16_t data);
 
-void xchg(intel8080 *cpu);
-void xthl(intel8080 *cpu);
-// XCHG // Swaps H and L with D and E
-// XTHL // Swaps L with SP and H with SP + 1
+void xchg(intel8080 *cpu); // Swaps H and L with D and E
+void xthl(intel8080 *cpu); // Swaps L with SP and H with SP + 1
 
 void pop_register(intel8080 *cpu);
 void push_register(intel8080 *cpu);
@@ -97,5 +95,30 @@ void jp(intel8080 *cpu, uint16_t addr);
 
 void call(intel8080 *cpu, uint16_t data);
 void ret(intel8080 *cpu);
+
+// ===== Logical Group =====
+//ANA Logical AND with Accumulator
+void ana(intel8080 *cpu);
+//ANI Logical AND with Accumulator Using Immediate Data
+void ani(intel8080 *cpu, uint8_t data);
+//ORA Logical OR with Accumulator
+void ora(intel8080 *cpu);
+//ORI Logical OR with Accumulator Using Immediate Data
+void ori(intel8080 *cpu, uint8_t data);
+//XRA Exclusive Logical OR with Accumulator
+void xra(intel8080 *cpu);
+//XRI Exclusive OR Using Immediate Data
+void xri(intel8080 *cpu, uint8_t data);
+//CMP Compare
+void cmp(intel8080 *cpu);
+void cpi(intel8080 *cpu, uint8_t data);
+//CPI Compare Using Immediate Data
+//RLC Rotate Accumulator Left
+//RRC Rotate Accumulator Right
+//RAL Rotate Left Through Carry
+//RAR Rotate Right Through Carry
+//CMA Complement Accumulator
+//CMC Complement Carry Flag
+//STC Set Carry Flag
 
 extern const instr_info_t opcode_map[0xFF];
