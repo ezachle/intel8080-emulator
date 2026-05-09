@@ -254,7 +254,7 @@ static void swap_u16(uint16_t *a, uint16_t *b) {
 
 static void modify_flags(uint16_t value, registers_t *regs, const uint8_t flag_access) {
     if(HAS_ACCESS(flag_access, SIGN)) {
-        regs->f.sign = (value & (1 << SIGN));
+        regs->f.sign = (value & (1 << SIGN)) & 0x1;
     }
 
     if(HAS_ACCESS(flag_access, ZERO)) {
@@ -330,7 +330,7 @@ void mov(intel8080 *cpu) {
 
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.sp, "%s: Moving data from register %c (0x%02X) to %c (0x%02X)", ii.instruction, 
+    LOG_DEBUG(cpu->regs.pc, "%s: Moving data from register %c (0x%02X) to %c (0x%02X)", ii.instruction, 
               get_register_char(reg_src), *src, get_register_char(reg_dst), *dst);
 #endif
 
@@ -352,20 +352,20 @@ void mvi(intel8080 *cpu, uint8_t data) {
 }
 
 void sta(intel8080 *cpu, uint16_t addr) {
-    cpu->mem.data[addr] = cpu->regs.a;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Loading register A(0x%02X) into memory address 0x%04X", ii.instruction, cpu->regs.a, addr);
 #endif
+    cpu->mem.data[addr] = cpu->regs.a;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void lda(intel8080 *cpu, uint16_t addr) {
-    cpu->regs.a = cpu->mem.data[addr];
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying 0x%02X into the accumulator", ii.instruction, cpu->regs.a);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying data from memory address 0x%04X(0x%02X) into the accumulator", ii.instruction, addr, cpu->regs.a);
 #endif
+    cpu->regs.a = cpu->mem.data[addr];
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -403,31 +403,37 @@ void stax(intel8080 *cpu) {
 }
 
 void lhld(intel8080 *cpu, uint16_t addr) {
-    cpu->regs.hl = cpu->mem.data[addr];
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Loading data at address 0x%04X(0x%02X) in register HL", ii.instruction, addr, cpu->mem.data[cpu->regs.hl]);
 #endif
-
+    cpu->regs.hl = cpu->mem.data[addr];
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void shld(intel8080 *cpu, uint16_t addr) {
-    cpu->mem.data[addr] = cpu->regs.hl;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Copying HL(0x%04X) to address 0x%04X", ii.instruction, cpu->regs.hl, addr);
 #endif
-
+    cpu->mem.data[addr] = cpu->regs.hl;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void xchg(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) and DE(0x%04X), respectively", ii.instruction, cpu->regs.hl, cpu->regs.de);
+#endif
     swap_u16(&cpu->regs.hl, &cpu->regs.de);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void xthl(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP+1(0x%02X) and SP(0x%02X)", ii.instruction, cpu->regs.hl, cpu->regs.sp+1, cpu->regs.sp);
+#endif
     swap_u8(&cpu->regs.l, &cpu->mem.data[cpu->regs.sp]);
     swap_u8(&cpu->regs.h, &cpu->mem.data[cpu->regs.sp + 1]);
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -436,7 +442,7 @@ void xthl(intel8080 *cpu) {
 void jmp(intel8080 *cpu, uint16_t data) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.sp, "%s: Jumping to address 0x%04X", ii.instruction, data);
+    LOG_DEBUG(cpu->regs.bc, "%s: Jumping to address 0x%04X", ii.instruction, data);
 #endif
     cpu->regs.pc = data;
 }
@@ -506,6 +512,10 @@ void jp(intel8080 *cpu, uint16_t addr) {
 }
 
 void lxi(intel8080 *cpu, uint16_t data) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying data 0x%04X into register/SP", ii.instruction, data);
+#endif
     uint8_t opcode = CUR_OP(cpu);
     switch(OP_DST_REG(cpu)) {
         case REG_B:
@@ -529,11 +539,6 @@ void lxi(intel8080 *cpu, uint16_t data) {
             break;
     }
 
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying data 0x%04X into register/SP", ii.instruction, data);
-#endif
-
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -543,7 +548,6 @@ static void push_stack(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Pushing PC(0x%04X) at SP 0x%04X", ii.instruction, cpu->regs.pc, cpu->regs.sp);
 #endif
     cpu->regs.sp += 2;
-
     cpu->mem.data[cpu->regs.sp] = cpu->regs.pc;
 }
 
@@ -553,7 +557,6 @@ void push_register(intel8080 *cpu) {
     const uint8_t *instr = &cpu->mem.data[cpu->regs.pc];
     LOG_DEBUG(cpu->regs.pc, "%s: Pushing data: 0x%02X%02X at SP 0x%04X", ii.instruction, *(instr+1), *(instr+2), cpu->regs.sp);
 #endif
-
     uint16_t *reg_ptr = NULL;
     switch(OP_DST_REG(cpu)){
         case REG_B:
@@ -577,11 +580,8 @@ void push_register(intel8080 *cpu) {
             break;
     }
 
-    // Automatically incrememted as per the manual
     cpu->regs.sp += 2;
-    if(reg_ptr != NULL)
-        *reg_ptr = cpu->mem.data[cpu->regs.sp];
-
+    *reg_ptr = cpu->mem.data[cpu->regs.sp];
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -619,10 +619,8 @@ void pop_register(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) at SP 0x%04X", ii.instruction, *reg_ptr, cpu->regs.sp);
 #endif
 
-    if(reg_ptr != NULL) {
-        *reg_ptr = cpu->mem.data[cpu->regs.sp];
-        modify_flags(*reg_ptr, &cpu->regs, ii.flag_access);
-    }
+    *reg_ptr = cpu->mem.data[cpu->regs.sp];
+    modify_flags(*reg_ptr, &cpu->regs, ii.flag_access);
 
     cpu->regs.sp -= 2;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -686,22 +684,21 @@ void dad(intel8080 *cpu) {
 
 void inr(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Incrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
+#endif
 
     if(reg_ptr) {
         (*reg_ptr)++;
         modify_flags(*reg_ptr, &cpu->regs, FLAG_ACCESS(cpu));
     }
 
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Incrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
-#endif
-
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void add(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, CUR_OP(cpu));
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to accumulator(0x%02X); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.a + *reg_ptr);
@@ -715,7 +712,7 @@ void add(intel8080 *cpu) {
 }
 
 void sub(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, CUR_OP(cpu));
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting 0x%02X to accumulator(0x%02X); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.a - *reg_ptr);
@@ -729,76 +726,71 @@ void sub(intel8080 *cpu) {
 }
 
 void adc(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, CUR_OP(cpu));
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
     uint16_t t = cpu->regs.a + *reg_ptr + 1;
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to accumulator(0x%02X) + carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
 #endif
 
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void sbb(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, CUR_OP(cpu));
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
     uint16_t t = cpu->regs.a - *reg_ptr - 1;
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting 0x%02X to accumulator(0x%02X) - carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
 #endif
 
-
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void adi(intel8080 *cpu, uint8_t data) {
     uint16_t t = cpu->regs.a + data;
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Adding accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.a, data, t);
 #endif
-
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void sui(intel8080 *cpu, uint8_t data) {
     uint16_t t = cpu->regs.a - data;
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.a, data, t);
 #endif
-
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void aci(intel8080 *cpu, uint8_t data) {
     uint16_t t = cpu->regs.a + data + 1;
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Adding carry(%" PRIu8"), accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a, data, t);
 #endif
-
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void sbi(intel8080 *cpu, uint8_t data) {
     uint16_t t = cpu->regs.a - data - 1;
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting carry(%" PRIu8"), accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a, data, t);
 #endif
-
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }

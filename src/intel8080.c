@@ -7,8 +7,6 @@ void init_memory(memory_t *mem) {
 void reset_memory(registers_t *regs, memory_t *mem) {
     regs->pc = 0x0;
     regs->sp = 0x0;
-    regs->f.flags = 0;        // cast to flags_t when using
-
     init_memory(mem);
 }
 
