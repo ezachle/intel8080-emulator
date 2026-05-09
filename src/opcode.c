@@ -585,15 +585,6 @@ void lxi(intel8080 *cpu, uint16_t data) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-static void push_stack(intel8080 *cpu) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Pushing PC(0x%04X) at SP 0x%04X", ii.instruction, cpu->regs.pc, cpu->regs.sp);
-#endif
-    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 8) & 0xFF;
-    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 0) & 0xFF;
-}
-
 void push_register(intel8080 *cpu) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
@@ -628,12 +619,6 @@ void push_register(intel8080 *cpu) {
                ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
     cpu->regs.sp += 2;
     cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
-static void pop_stack(intel8080 *cpu) {
-    cpu->regs.pc = ((cpu->mem.data[cpu->regs.sp-1] << 0) & 0xFF)|
-                   ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
-    cpu->regs.sp -= 2;
 }
 
 void pop_register(intel8080 *cpu) {
@@ -675,20 +660,32 @@ void pop_register(intel8080 *cpu) {
 }
 
 void ret(intel8080 *cpu) {
-    pop_stack(cpu);
-    cpu->regs.pc += INSTR_SIZE(cpu);
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Returning to address at 0x%04X", ii.instruction, cpu->regs.pc);
+    uint16_t old_pc = cpu->regs.pc;
+#endif
+    cpu->regs.pc = ((cpu->mem.data[cpu->regs.sp-1] << 0) & 0xFF)|
+                   ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
+    cpu->regs.sp -= 2;
+#ifdef DEBUG
+    LOG_DEBUG(old_pc, "%s: Returning to address at 0x%04X", ii.instruction, cpu->regs.pc);
 #endif
 }
 
 void call(intel8080 *cpu, uint16_t data) {
 #ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    const uint16_t old_pc = cpu->regs.pc;
     LOG_DEBUG(cpu->regs.pc, "%s: Calling method at address 0x%04X", ii.instruction, data);
 #endif
-    push_stack(cpu);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+
+    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 8) & 0xFF;
+    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 0) & 0xFF;
+#ifdef DEBUG
+    LOG_DEBUG(old_pc, "%s: Pushing PC(0x%04X) at SP 0x%04X", ii.instruction, cpu->regs.pc, cpu->regs.sp);
+#endif
+
     cpu->regs.pc = data;
 }
 

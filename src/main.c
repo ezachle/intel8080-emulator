@@ -12,22 +12,8 @@ void emulate_8080(intel8080 *cpu) {
         printf("Unimplemented opcode: %02X, PC: %04X\n", instr[0], *pc);
         *pc += 1;
     } else {
-        if(ii.handler.f0 != NULL) {
-            if(ii.op_bytes == 1) {
-                ii.handler.f0(cpu);
-            } else if(ii.op_bytes == 2) {
-                ii.handler.f1(cpu, *(instr+1));
-            } else if(ii.op_bytes == 3) {
-                ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
-            }
-        } else {
-            printf("Unimplemented opcode: %02X, PC: %04X\n", instr[0], *pc);
-            cpu->regs.pc += ii.op_bytes;
-        }
-
-        cpu->cycles += ii.cycles;
 #ifdef DEBUG
-        printf("Instruction: %-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
+        printf("%-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
                ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
         printf("  Registers:\n");
         printf("   sp: 0x%04X\n", cpu->regs.sp);
@@ -50,9 +36,23 @@ void emulate_8080(intel8080 *cpu) {
         for(uint8_t i = 0; i < ii.op_bytes; i++) {
             printf(" %02X", *(instr+i));
         }
-        printf("\nTotal Cycles: %" PRIu64, cpu->cycles);
+        printf("\nTotal Cycles: %" PRIu64, cpu->cycles + ii.cycles);
         printf("\n");
 #endif
+        if(ii.handler.f0 != NULL) {
+            if(ii.op_bytes == 1) {
+                ii.handler.f0(cpu);
+            } else if(ii.op_bytes == 2) {
+                ii.handler.f1(cpu, *(instr+1));
+            } else if(ii.op_bytes == 3) {
+                ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
+            }
+        } else {
+            printf("Unimplemented opcode: %02X, PC: %04X\n", instr[0], *pc);
+            cpu->regs.pc += ii.op_bytes;
+        }
+
+        cpu->cycles += ii.cycles;
     }
 }
 
@@ -70,10 +70,11 @@ int main(int argc, char *argv[]) {
     while(!WindowShouldClose()) {
         if(cpu.regs.pc < 0xFFFF) {
 #ifdef DEBUG
-            printf("%" PRIu64") ", instr_count);
+            printf("----------------------------\n");
+            printf("Instruction %" PRIu64": ", instr_count);
+            instr_count += 1;
 #endif
             emulate_8080(&cpu);
-            instr_count += 1;
         }
 
         BeginDrawing();
