@@ -26,6 +26,20 @@ void emulate_8080(intel8080 *cpu) {
 #ifdef DEBUG
         //printf("Instruction: %-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
         //       ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
+        printf("  Registers:\n");
+        printf("   sp: 0x%04X\n", cpu->regs.sp);
+        printf("   pc: 0x%04X\n", cpu->regs.pc);
+        printf("   af: 0x%04X\n", cpu->regs.psw);
+        printf("    Flags:\n");
+        printf("     carry: %" PRIu8"\n", cpu->regs.f.carry);
+        printf("     parity: %" PRIu8"\n", cpu->regs.f.parity);
+        printf("     aux_carry: %" PRIu8"\n", cpu->regs.f.aux_carry);
+        printf("     zero: %" PRIu8"\n", cpu->regs.f.zero);
+        printf("     sign: %" PRIu8"\n", cpu->regs.f.sign);
+        printf("   bc: 0x%04X\n", cpu->regs.bc);
+        printf("   de: 0x%04X\n", cpu->regs.de);
+        printf("   hl: 0x%04X\n", cpu->regs.hl);
+        printf("   M(if applicable): 0x%04X\n", cpu->mem.data[cpu->regs.hl]);
         printf("  Data:");
         for(uint8_t i = 0; i < ii.op_bytes; i++) {
             printf(" %02X", *(instr+i));
