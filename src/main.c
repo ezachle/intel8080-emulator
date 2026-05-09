@@ -21,11 +21,12 @@ void emulate_8080(intel8080 *cpu) {
                 ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
             }
         } else {
+            printf("Unimplemented opcode: %02X, PC: %04X\n", instr[0], *pc);
             cpu->regs.pc += ii.op_bytes;
         }
 #ifdef DEBUG
-        //printf("Instruction: %-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
-        //       ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
+        printf("Instruction: %-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
+               ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
         printf("  Registers:\n");
         printf("   sp: 0x%04X\n", cpu->regs.sp);
         printf("   pc: 0x%04X\n", cpu->regs.pc);
@@ -39,7 +40,7 @@ void emulate_8080(intel8080 *cpu) {
         printf("   bc: 0x%04X\n", cpu->regs.bc);
         printf("   de: 0x%04X\n", cpu->regs.de);
         printf("   hl: 0x%04X\n", cpu->regs.hl);
-        printf("   M(if applicable): 0x%04X\n", cpu->mem.data[cpu->regs.hl]);
+        printf("   memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.hl, cpu->mem.data[cpu->regs.hl]);
         printf("  Data:");
         for(uint8_t i = 0; i < ii.op_bytes; i++) {
             printf(" %02X", *(instr+i));
