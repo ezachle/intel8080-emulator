@@ -31,6 +31,8 @@ typedef struct {
     opcode_func_t handler;
 } instr_info_t;
 
+void unimplemented_instr(intel8080 *cpu);
+
 // ===== Data Transfer Group =====
 void mov(intel8080 *cpu);
 void mvi(intel8080 *cpu, uint8_t data);
@@ -82,19 +84,45 @@ void dcr(intel8080 *cpu);
 // Double Add
 void dad(intel8080 *cpu);
 
+// ===== Branch Group =====
 void jmp(intel8080 *cpu, uint16_t addr);
-void jz(intel8080 *cpu, uint16_t addr);
-void jc(intel8080 *cpu, uint16_t addr);
-void jpe(intel8080 *cpu, uint16_t addr);
-void jm(intel8080 *cpu, uint16_t addr);
+
+void rnz(intel8080 *cpu);
+void rnc(intel8080 *cpu);
+void rpo(intel8080 *cpu);
+void rp(intel8080 *cpu);
 
 void jnz(intel8080 *cpu, uint16_t addr);
 void jnc(intel8080 *cpu, uint16_t addr);
 void jpo(intel8080 *cpu, uint16_t addr);
 void jp(intel8080 *cpu, uint16_t addr);
 
+void cnz(intel8080 *cpu, uint16_t addr);
+void cnc(intel8080 *cpu, uint16_t addr);
+void cpo(intel8080 *cpu, uint16_t addr);
+void cp(intel8080 *cpu, uint16_t addr);
+
+void rz(intel8080 *cpu);
+void rc(intel8080 *cpu);
+void rpe(intel8080 *cpu);
+void rm(intel8080 *cpu);
+
+void jz(intel8080 *cpu, uint16_t addr);
+void jc(intel8080 *cpu, uint16_t addr);
+void jpe(intel8080 *cpu, uint16_t addr);
+void jm(intel8080 *cpu, uint16_t addr);
+
+void cz(intel8080 *cpu, uint16_t addr);
+void cc(intel8080 *cpu, uint16_t addr);
+void cpe(intel8080 *cpu, uint16_t addr);
+void cm(intel8080 *cpu, uint16_t addr);
+
 void call(intel8080 *cpu, uint16_t data);
 void ret(intel8080 *cpu);
+void pchl(intel8080 *cpu);
+void rst(intel8080 *cpu);
+
+// RST  Restart instr used woth interrupts
 
 // ===== Logical Group =====
 //ANA Logical AND with Accumulator
@@ -112,13 +140,16 @@ void xri(intel8080 *cpu, uint8_t data);
 //CMP Compare
 void cmp(intel8080 *cpu);
 void cpi(intel8080 *cpu, uint8_t data);
-//CPI Compare Using Immediate Data
+
+// Means to roate accumulator one bit position to left or right
 //RLC Rotate Accumulator Left
 //RRC Rotate Accumulator Right
 //RAL Rotate Left Through Carry
 //RAR Rotate Right Through Carry
+
+
 //CMA Complement Accumulator
 //CMC Complement Carry Flag
 //STC Set Carry Flag
 
-extern const instr_info_t opcode_map[0xFF];
+extern const instr_info_t opcode_map[0x100];

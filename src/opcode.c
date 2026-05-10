@@ -1,7 +1,7 @@
 #include "log.h"
 #include "opcode.h"
 
-const instr_info_t opcode_map[0xFF] = {
+const instr_info_t opcode_map[0x100] = {
     [0x00] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
     [0x10] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
     [0x20] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
@@ -9,20 +9,50 @@ const instr_info_t opcode_map[0xFF] = {
 
     [0xCB] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
     [0xC3] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
+    [0xC9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
+    [0xD9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
+    [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
+
+    [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xF7] = {"RST 6", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+
+    [0xCF] = {"RST 1", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xDF] = {"RST 3", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+
+    [0xC0] = {"RNZ", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
+    [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
+    [0xE0] = {"RPO", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
+    [0xF0] = {"RP", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
 
     [0xC2] = {"JNZ a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jnz}},
     [0xD2] = {"JNC a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jnc}},
     [0xE2] = {"JPO a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jpo}},
     [0xF2] = {"JP a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jp}},
 
+    [0xC4] = {"CNZ a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnz}},
+    [0xD4] = {"CNC a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnc}},
+    [0xE4] = {"CPO a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cpo}},
+    [0xF4] = {"CP a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cp}},
+
+    [0xC8] = {"RZ", 1, 5, MAKE_FLAG_NONE, {.f0  = rz}},
+    [0xD8] = {"RC", 1, 5, MAKE_FLAG_NONE, {.f0  = rc}},
+    [0xE8] = {"RPE", 1, 5, MAKE_FLAG_NONE, {.f0 = rpe}},
+    [0xF8] = {"RM", 1, 5, MAKE_FLAG_NONE, {.f0  = rm}},
+
     [0xCA] = {"JZ a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jz}},
     [0xDA] = {"JC a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jc}},
     [0xEA] = {"JPE a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jpe}},
     [0xFA] = {"JM a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jm}},
 
-    [0xC9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
-    [0xD9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
-    [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xCC] = {"CZ a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cz}},
+    [0xDC] = {"CC a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cc}},
+    [0xEC] = {"CPE a16",  3, 11, MAKE_FLAG_NONE, {.f2 = cpe}},
+    [0xFC] = {"CM a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cm}},
 
     [0xC1] = {"POP B", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
     [0xD1] = {"POP D", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
@@ -365,6 +395,12 @@ static uint8_t* get_register(intel8080 *cpu, registers reg) {
     }
 }
 
+void unimplemented_instr(intel8080 *cpu) {
+    LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction", GET_INSTR_CPU(cpu).instruction);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+
 void mov(intel8080 *cpu) {
     registers reg_src = OP_SRC_REG(cpu);
     registers reg_dst = OP_DST_REG(cpu);
@@ -490,41 +526,46 @@ void jmp(intel8080 *cpu, uint16_t data) {
     cpu->regs.pc = data;
 }
 
-void jz(intel8080 *cpu, uint16_t addr) {
+void rnz(intel8080 *cpu) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JZ to address 0x%04X; Result: %d", addr, cpu->regs.f.zero);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Zero; Result: %d", ii.instruction, !cpu->regs.f.zero);
 #endif
-    if(cpu->regs.f.zero) cpu->regs.pc = addr;
+    if(cpu->regs.f.zero == 0) ret(cpu);
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void jc(intel8080 *cpu, uint16_t addr) {
+void rnc(intel8080 *cpu) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JC to address 0x%04X; Result: %d", addr, cpu->regs.f.carry);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Carry; Result: %d", ii.instruction, !cpu->regs.f.carry);
 #endif
-    if(cpu->regs.f.carry) cpu->regs.pc = addr;
+    if(cpu->regs.f.carry == 0) ret(cpu);
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void jpe(intel8080 *cpu, uint16_t addr) {
+void rpo(intel8080 *cpu) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JPE to address 0x%04X; Result: %d", addr, cpu->regs.f.parity);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Parity Odd; Result: %d", ii.instruction, !cpu->regs.f.parity);
 #endif
-    if(cpu->regs.f.parity) cpu->regs.pc = addr;
+    if(cpu->regs.f.parity == 0) ret(cpu);
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void jm(intel8080 *cpu, uint16_t addr) {
+void rp(intel8080 *cpu) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JM to address 0x%04X; Result: %d", addr, cpu->regs.f.sign);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Sign Positive; Result: %d", ii.instruction, !cpu->regs.f.sign);
 #endif
-    if(cpu->regs.f.sign) cpu->regs.pc = addr;
+    if(cpu->regs.f.sign == 0) ret(cpu);
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void jnz(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JNZ to address 0x%04X; Result: %d", addr, !cpu->regs.f.zero);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JNZ to address 0x%04X; Result: %d", ii.instruction, addr, !cpu->regs.f.zero);
 #endif
     if(!cpu->regs.f.zero) cpu->regs.pc = addr;
     else cpu->regs.pc += INSTR_SIZE(cpu);
@@ -532,7 +573,8 @@ void jnz(intel8080 *cpu, uint16_t addr) {
 
 void jnc(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JNC to address 0x%04X; Result: %d", addr, !cpu->regs.f.carry);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JNC to address 0x%04X; Result: %d", ii.instruction, addr, !cpu->regs.f.carry);
 #endif
     if(!cpu->regs.f.carry) cpu->regs.pc = addr;
     else cpu->regs.pc += INSTR_SIZE(cpu);
@@ -540,7 +582,8 @@ void jnc(intel8080 *cpu, uint16_t addr) {
 
 void jpo(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JPO to address 0x%04X; Result: %d", addr, !cpu->regs.f.parity);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JPO to address 0x%04X; Result: %d", ii.instruction, addr, !cpu->regs.f.parity);
 #endif
     if(!cpu->regs.f.parity) cpu->regs.pc = addr;
     else cpu->regs.pc += INSTR_SIZE(cpu);
@@ -548,9 +591,154 @@ void jpo(intel8080 *cpu, uint16_t addr) {
 
 void jp(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "JP to address 0x%04X; Result: %d", addr, !cpu->regs.f.sign);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JP to address 0x%04X; Result: %d", ii.instruction, addr, !cpu->regs.f.sign);
 #endif
     if(!cpu->regs.f.sign) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cnz(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Not Zero; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero == 0);
+#endif
+    if(cpu->regs.f.zero == 0) call(cpu, addr);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cnc(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Not Carry; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry == 0);
+#endif
+    if(cpu->regs.f.carry == 0) call(cpu, addr);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cpo(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Parity Odd; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity == 0);
+#endif
+    if(cpu->regs.f.parity == 0) call(cpu, addr);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cp(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Positive; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 0);
+#endif
+    if(cpu->regs.f.zero == 0) call(cpu, addr);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rz(intel8080 *cpu) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Zero; Result: %" PRIu8, ii.instruction, cpu->regs.f.zero);
+#endif
+    if(cpu->regs.f.zero == 1) ret(cpu);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rc(intel8080 *cpu) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s Return if Carry; Result: %" PRIu8, ii.instruction, cpu->regs.f.carry);
+#endif
+    if(cpu->regs.f.carry == 1) ret(cpu);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rpe(intel8080 *cpu) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Parity Even; Result: %" PRIu8, ii.instruction, cpu->regs.f.parity);
+#endif
+    if(cpu->regs.f.parity == 1) ret(cpu);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rm(intel8080 *cpu) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Sign Minus; Result: %" PRIu8, ii.instruction, cpu->regs.f.sign);
+#endif
+    if(cpu->regs.f.sign == 1) ret(cpu);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void jz(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JZ to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero);
+#endif
+    if(cpu->regs.f.zero) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void jc(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JC to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry);
+#endif
+    if(cpu->regs.f.carry) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void jpe(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JPE to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity);
+#endif
+    if(cpu->regs.f.parity) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void jm(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JM to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign);
+#endif
+    if(cpu->regs.f.sign) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cz(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Zero; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero == 1);
+#endif
+    if(cpu->regs.f.zero == 1) call(cpu, addr);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cc(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Carry; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry == 1);
+#endif
+    if(cpu->regs.f.carry == 1) call(cpu, addr);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cpe(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Parity Even; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity == 1);
+#endif
+    if(cpu->regs.f.parity == 1) call(cpu, addr);
+    else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cm(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Minus; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 1);
+#endif
+    if(cpu->regs.f.zero == 1) call(cpu, addr);
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -687,6 +875,22 @@ void call(intel8080 *cpu, uint16_t data) {
 #endif
 
     cpu->regs.pc = data;
+}
+
+void pchl(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting PC to contents of HL(0x%02X)", ii.instruction, cpu->regs.hl); 
+#endif
+    cpu->regs.pc = cpu->regs.hl;
+}
+
+void rst(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s", ii.instruction); 
+#endif
+    call(cpu, cpu->regs.pc);
 }
 
 void dad(intel8080 *cpu) {
