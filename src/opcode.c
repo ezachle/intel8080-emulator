@@ -14,15 +14,15 @@ const instr_info_t opcode_map[0x100] = {
     [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
     [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
 
-    [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xF7] = {"RST 6", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xF7] = {"RST 6", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
 
-    [0xCF] = {"RST 1", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xDF] = {"RST 3", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xCF] = {"RST 1", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xDF] = {"RST 3", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
 
     [0xC0] = {"RNZ", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
     [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
@@ -74,14 +74,14 @@ const instr_info_t opcode_map[0x100] = {
     [0x86] = {"ADD M", 1, 7, MAKE_FLAG_ALL, {.f0 = add}},
     [0x87] = {"ADD A", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
 
-    [0x90] = {"SUB B", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
-    [0x91] = {"SUB C", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
-    [0x92] = {"SUB D", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
-    [0x93] = {"SUB E", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
-    [0x94] = {"SUB H", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
-    [0x95] = {"SUB L", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
-    [0x96] = {"SUB M", 1, 7, MAKE_FLAG_ALL, {.f0 = add}},
-    [0x97] = {"SUB A", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
+    [0x90] = {"SUB B", 1, 4, MAKE_FLAG_ALL, {.f0 = sub}},
+    [0x91] = {"SUB C", 1, 4, MAKE_FLAG_ALL, {.f0 = sub}},
+    [0x92] = {"SUB D", 1, 4, MAKE_FLAG_ALL, {.f0 = sub}},
+    [0x93] = {"SUB E", 1, 4, MAKE_FLAG_ALL, {.f0 = sub}},
+    [0x94] = {"SUB H", 1, 4, MAKE_FLAG_ALL, {.f0 = sub}},
+    [0x95] = {"SUB L", 1, 4, MAKE_FLAG_ALL, {.f0 = sub}},
+    [0x96] = {"SUB M", 1, 7, MAKE_FLAG_ALL, {.f0 = sub}},
+    [0x97] = {"SUB A", 1, 4, MAKE_FLAG_ALL, {.f0 = sub}},
 
     [0xC6] = {"ADI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = adi}},
     [0xD6] = {"SUI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = sui}},
@@ -126,6 +126,16 @@ const instr_info_t opcode_map[0x100] = {
     [0x13] = {"INX D", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
     [0x23] = {"INX H", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
     [0x33] = {"INX SP", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
+
+    [0x04] = {"INR B", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
+    [0x14] = {"INR D", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
+    [0x24] = {"INR H", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
+    [0x34] = {"INR M", 1, 10, MAKE_FLAG_SZAP, {.f0 = inr}},
+
+    [0x0C] = {"INR B", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
+    [0x1C] = {"INR D", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
+    [0x2C] = {"INR H", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
+    [0x3C] = {"INR A", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
 
     [0x09] = {"DAD B", 1, 10, MAKE_FLAG_CARRY, {.f0 = dad}},
     [0x19] = {"DAD C", 1, 10, MAKE_FLAG_CARRY, {.f0 = dad}},
@@ -277,6 +287,16 @@ const instr_info_t opcode_map[0x100] = {
 
     [0xEE] = {"XRI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = xri}},
     [0xFE] = {"CPI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = cpi}},
+
+    [0x07] = {"RLC", 1, 4, MAKE_FLAG_CARRY, {.f0 = rlc}},
+    [0x17] = {"RRC", 1, 4, MAKE_FLAG_CARRY, {.f0 = rrc}},
+    [0x0F] = {"RAL", 1, 4, MAKE_FLAG_CARRY, {.f0 = ral}},
+    [0x1F] = {"RAR", 1, 4, MAKE_FLAG_CARRY, {.f0 = rar}},
+
+    [0x27] = {"DAA", 1, 4, MAKE_FLAG_ALL,   {.f0 = daa}},
+    [0x37] = {"STC", 1, 4, MAKE_FLAG_CARRY, {.f0 = stc}},
+    [0x2F] = {"CMA", 1, 4, MAKE_FLAG_NONE,  {.f0 = cma}},
+    [0x3F] = {"CMC", 1, 4, MAKE_FLAG_CARRY, {.f0 = cmc}},
 };
 
 typedef enum {
@@ -399,7 +419,6 @@ void unimplemented_instr(intel8080 *cpu) {
     LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction", GET_INSTR_CPU(cpu).instruction);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
-
 
 void mov(intel8080 *cpu) {
     registers reg_src = OP_SRC_REG(cpu);
@@ -596,6 +615,14 @@ void jp(intel8080 *cpu, uint16_t addr) {
 #endif
     if(!cpu->regs.f.sign) cpu->regs.pc = addr;
     else cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rst(intel8080 *cpu) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: RST %" PRIu8, ii.instruction, (CUR_OP(cpu) & 0x38) >> 3);
+#endif
+    call(cpu, CUR_OP(cpu) & 0x38);
 }
 
 void cnz(intel8080 *cpu, uint16_t addr) {
@@ -883,14 +910,6 @@ void pchl(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Setting PC to contents of HL(0x%02X)", ii.instruction, cpu->regs.hl); 
 #endif
     cpu->regs.pc = cpu->regs.hl;
-}
-
-void rst(intel8080 *cpu) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s", ii.instruction); 
-#endif
-    call(cpu, cpu->regs.pc);
 }
 
 void dad(intel8080 *cpu) {
@@ -1231,18 +1250,116 @@ void xri(intel8080 *cpu, uint8_t data) {
 }
 
 void cmp(intel8080 *cpu) {
-#ifdef DEBUG
     uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+
+    uint16_t t = cpu->regs.a - *reg_ptr;
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
+#ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Comparing Data(0x%02X) and Accumulator(0x%02X)", ii.instruction, *reg_ptr, cpu->regs.a);
+    LOG_DEBUG(cpu->regs.pc, "%s: Comparing Register(0x%02X) and Accumulator(0x%02X)", ii.instruction, *reg_ptr, cpu->regs.a);
+    LOG_DEBUG(cpu->regs.pc, "%s: Result: 0x%02X", ii.instruction, t);
 #endif
-    sub(cpu);
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void cpi(intel8080 *cpu, uint8_t data) {
+    uint16_t t = cpu->regs.a - data;
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Comparing Data(0x%02X) and Accumulator(0x%02X)", ii.instruction, data, cpu->regs.a);
+    LOG_DEBUG(cpu->regs.pc, "%s: Result: 0x%02X", ii.instruction, t);
 #endif
-    sui(cpu, data);
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rlc(intel8080* cpu) {
+    cpu->regs.f.carry = (cpu->regs.a >> 7);
+    cpu->regs.a = (cpu->regs.a << 1) | cpu->regs.f.carry;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Rotating Accumulator Left", ii.instruction);
+    LOG_DEBUG(cpu->regs.pc, "%s: Carry: %" PRIu8" Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a);
+#endif
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rrc(intel8080* cpu) {
+    cpu->regs.f.carry = cpu->regs.a & 0x1;
+    cpu->regs.a = (cpu->regs.a >> 1) | (cpu->regs.f.carry << 7);
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Rotating Accumulator Right", ii.instruction);
+    LOG_DEBUG(cpu->regs.pc, "%s: Carry: %" PRIu8" Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a);
+#endif
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void ral(intel8080* cpu) {
+    uint8_t temp = cpu->regs.f.carry;
+    cpu->regs.f.carry = cpu->regs.a >> 7;
+    cpu->regs.a = (cpu->regs.a << 1) | temp;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Rotating Left Through Carry", ii.instruction);
+    LOG_DEBUG(cpu->regs.pc, "%s: Carry: %" PRIu8" Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a);
+#endif
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void rar(intel8080* cpu) {
+    uint8_t temp = cpu->regs.f.carry;
+    cpu->regs.f.carry = cpu->regs.a & 0x1;
+    cpu->regs.a = (cpu->regs.a >> 1) | (temp << 7);
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Rotating Right Through Carry", ii.instruction);
+    LOG_DEBUG(cpu->regs.pc, "%s: Carry: %" PRIu8" Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a);
+#endif
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void daa(intel8080 *cpu) {
+    if((cpu->regs.a & 0xF) > 9 || cpu->regs.f.aux_carry) {
+        cpu->regs.a += 6;
+        modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    }
+
+    if(((cpu->regs.a >> 4) & 0xF) > 9 || cpu->regs.f.carry) {
+        cpu->regs.a += 6;
+        modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    }
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Adjusting accumulator: 0x%02X", ii.instruction, ~cpu->regs.a);
+#endif
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+void cma(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Complementing accumulator: 0x%02X", ii.instruction, ~cpu->regs.a);
+#endif
+    cpu->regs.a = ~cpu->regs.a;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cmc(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Complementing carry: 0x%02X", ii.instruction, ~cpu->regs.f.carry);
+#endif
+    cpu->regs.f.carry = ~cpu->regs.f.carry;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void stc(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting carry to 1", ii.instruction);
+#endif
+    cpu->regs.f.carry = 1;
+    cpu->regs.pc += INSTR_SIZE(cpu);
 }

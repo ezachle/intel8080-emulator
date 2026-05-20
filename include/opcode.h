@@ -123,6 +123,7 @@ void pchl(intel8080 *cpu);
 void rst(intel8080 *cpu);
 
 // RST  Restart instr used woth interrupts
+void rst(intel8080 *cpu);
 
 // ===== Logical Group =====
 //ANA Logical AND with Accumulator
@@ -142,14 +143,17 @@ void cmp(intel8080 *cpu);
 void cpi(intel8080 *cpu, uint8_t data);
 
 // Means to roate accumulator one bit position to left or right
-//RLC Rotate Accumulator Left
-//RRC Rotate Accumulator Right
-//RAL Rotate Left Through Carry
-//RAR Rotate Right Through Carry
+void rlc(intel8080* cpu);
+void rrc(intel8080* cpu);
+void ral(intel8080* cpu);
+void rar(intel8080* cpu);
 
-
+void daa(intel8080 *cpu);
 //CMA Complement Accumulator
+void cma(intel8080 *cpu);
 //CMC Complement Carry Flag
+void cmc(intel8080 *cpu);
 //STC Set Carry Flag
+void stc(intel8080 *cpu);
 
 extern const instr_info_t opcode_map[0x100];
