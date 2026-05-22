@@ -74,7 +74,8 @@ int main(int argc, char *argv[]) {
             printf("Instruction %" PRIu64": ", instr_count);
             instr_count += 1;
 #endif
-            emulate_8080(&cpu);
+            if(!cpu.is_halted)
+                emulate_8080(&cpu);
         }
 
         BeginDrawing();

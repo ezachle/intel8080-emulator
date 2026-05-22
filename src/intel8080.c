@@ -1,3 +1,4 @@
+#include "log.h"
 #include "intel8080.h"
 
 void init_memory(memory_t *mem) {
@@ -40,7 +41,10 @@ bool init_8080(intel8080 *cpu, char *rom_name) {
 
     memset(cpu->io.display, 0, sizeof(cpu->io.display));
     cpu->io.scale_factor = 2;
+
     cpu->cycles = 0;
+    cpu->is_halted = false;
+    cpu->ei = false;
 
     return true;
 }

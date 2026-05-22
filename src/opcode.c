@@ -204,7 +204,6 @@ const instr_info_t opcode_map[0x100] = {
     [0x73] = {"MOV M, E", 1, 7, MAKE_FLAG_NONE, {.f0 = mov}},
     [0x74] = {"MOV M, H", 1, 7, MAKE_FLAG_NONE, {.f0 = mov}},
     [0x75] = {"MOV M, L", 1, 7, MAKE_FLAG_NONE, {.f0 = mov}},
-    [0x76] = {"HLT", 1, 7, MAKE_FLAG_NONE},
     [0x77] = {"MOV M, A", 1, 7, MAKE_FLAG_NONE, {.f0 = mov}},
 
     [0x78] = {"MOV A, B", 1, 5, MAKE_FLAG_NONE, {.f0 = mov}},
@@ -297,6 +296,14 @@ const instr_info_t opcode_map[0x100] = {
     [0x37] = {"STC", 1, 4, MAKE_FLAG_CARRY, {.f0 = stc}},
     [0x2F] = {"CMA", 1, 4, MAKE_FLAG_NONE,  {.f0 = cma}},
     [0x3F] = {"CMC", 1, 4, MAKE_FLAG_CARRY, {.f0 = cmc}},
+
+    // d8 == port
+    [0xD3] = {"OUT d8", 2, 10, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xDB] = {"IN d8", 2, 10, MAKE_FLAG_NONE,  {.f0 = unimplemented_instr}},
+
+    [0x76] = {"HLT", 1, 7, MAKE_FLAG_NONE, {.f0 = hlt}},
+    [0xF3] = {"EI", 1, 4, MAKE_FLAG_NONE, {.f0 = ei}},
+    [0xFB] = {"DI", 1, 4, MAKE_FLAG_NONE, {.f0 = di}},
 };
 
 typedef enum {
@@ -1361,5 +1368,32 @@ void stc(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Setting carry to 1", ii.instruction);
 #endif
     cpu->regs.f.carry = 1;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void hlt(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting HALT to True", ii.instruction);
+#endif
+    cpu->is_halted = true;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void ei(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Enabling interrupts", ii.instruction);
+#endif
+    cpu->ei = true;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void di(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Disabling interrupts", ii.instruction);
+#endif
+    cpu->ei = false;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }

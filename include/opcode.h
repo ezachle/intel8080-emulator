@@ -156,4 +156,8 @@ void cmc(intel8080 *cpu);
 //STC Set Carry Flag
 void stc(intel8080 *cpu);
 
+void hlt(intel8080 *cpu);
+void ei(intel8080 *cpu);
+void di(intel8080 *cpu);
+
 extern const instr_info_t opcode_map[0x100];

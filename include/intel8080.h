@@ -25,6 +25,9 @@ typedef struct {
     uint16_t    rom_size;
     uint64_t    cycles;
 
+    bool        is_halted;
+    bool        ei;         // Enable Interrupt
+
     struct {
         bool        display[SCREEN_WIDTH*SCREEN_HEIGHT];
         uint8_t     scale_factor;
