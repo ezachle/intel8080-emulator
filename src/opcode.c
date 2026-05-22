@@ -297,6 +297,10 @@ const instr_info_t opcode_map[0x100] = {
     [0x37] = {"STC", 1, 4, MAKE_FLAG_CARRY, {.f0 = stc}},
     [0x2F] = {"CMA", 1, 4, MAKE_FLAG_NONE,  {.f0 = cma}},
     [0x3F] = {"CMC", 1, 4, MAKE_FLAG_CARRY, {.f0 = cmc}},
+
+    // d8 == port
+    [0xD3] = {"OUT d8", 2, 10, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xDB] = {"IN d8", 2, 10, MAKE_FLAG_NONE,  {.f0 = unimplemented_instr}},
 };
 
 typedef enum {
