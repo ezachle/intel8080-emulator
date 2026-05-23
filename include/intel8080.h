@@ -8,7 +8,7 @@ typedef struct {
 } memory_t;
 
 void init_memory(memory_t *mem);
-void reset_memory(registers_t *regs, memory_t *mem);
+void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc);
 
 typedef struct {
     /*
@@ -34,5 +34,6 @@ typedef struct {
     } io;
 } intel8080;
 
-bool init_8080(intel8080 *cpu, char *rom_name);
+bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc);
 void destroy_8080(intel8080 *cpu);
+void emulate_8080(intel8080 *cpu);
