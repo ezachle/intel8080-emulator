@@ -1397,3 +1397,12 @@ void di(intel8080 *cpu) {
     cpu->ei = false;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
+
+static void generate_interrupt(intel8080 *cpu, uint8_t opcode) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Creating interrupt with opcode %" PRIu8, ii.instruction, opcode);
+#endif
+    cpu->interrupt_pending = true;
+    cpu->interrupt_vector = opcode;
+}

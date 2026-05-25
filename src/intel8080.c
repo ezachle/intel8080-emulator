@@ -4,6 +4,12 @@
 
 void init_memory(memory_t *mem) {
     memset(mem->data, 0, MAX_MEM);
+#ifdef CPM
+    mem->data[0x0000] = 0xC9;
+    mem->data[0x0005] = 0xC9;
+    mem->data[0x0006] = 0x00;
+    mem->data[0x0007] = 0xFE;
+#endif
 }
 
 void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc) {
@@ -12,7 +18,7 @@ void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc) {
     init_memory(mem);
 }
 
-static bool load_rom(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
+static bool load_rom(intel8080 *cpu, char *rom_name) {
     strncpy(cpu->rom_name, rom_name, strlen(rom_name));
 
     FILE *fp = fopen(rom_name, "rb");
@@ -30,9 +36,13 @@ static bool load_rom(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
     }
     rewind(fp);
 
-    reset_memory(&cpu->regs, &cpu->mem, start_pc);
-
-    if(!fread(cpu->mem.data, cpu->rom_size, 1, fp)) {
+    uint8_t *mem_ptr = NULL;
+#ifdef CPM
+    mem_ptr = &cpu->mem.data[0x0100];
+#else
+    mem_ptr = &cpu->mem.data[0x0000];
+#endif
+    if(!fread(mem_ptr, cpu->rom_size, 1, fp)) {
         LOG_ERROR(cpu->regs.pc, "Failed to read memory from ROM");
         fclose(fp);
         return false;
@@ -44,11 +54,19 @@ static bool load_rom(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
 }
 
 bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
-    if(!load_rom(cpu, rom_name, start_pc)) {
+    reset_memory(&cpu->regs, &cpu->mem, start_pc);
+
+    cpu->is_halted = false;
+    cpu->ei = false;
+    cpu->interrupt_pending = false;
+    cpu->interrupt_vector = 0;
+    
+    if(!load_rom(cpu, rom_name)) {
         LOG_ERROR(cpu->regs.pc, "Failed to load ROM: %s", rom_name);
         return false;
     }
 
+    cpu->quit = false;
     memset(cpu->io.display, 0, sizeof(cpu->io.display));
     cpu->io.scale_factor = 2;
 
@@ -64,9 +82,55 @@ void destroy_8080(intel8080 *cpu) {
     cpu->rom = NULL;
 }
 
+#ifdef CPM
+void handle_cpm(intel8080 *cpu) {
+    if(cpu->regs.pc == 0x0000) {
+        LOG(cpu->regs.pc, "CPM Program has reached Hook");
+        cpu->quit = true;
+        return;
+    }
+
+    if(cpu->regs.pc == 0x0005) {
+        switch(cpu->regs.c) {
+            case 2:
+                printf("%c", cpu->regs.e);
+                fflush(stdout);
+                break;
+            case 9:
+                uint16_t str_addr = cpu->regs.de;
+                while(cpu->mem.data[str_addr] != '$') {
+                    printf("%c", cpu->mem.data[str_addr]);
+                    str_addr++;
+                }
+                fflush(stdout);
+                break;
+            default:
+                LOG_WARNING(cpu->regs.pc, "Unimplemneted CP/M Instruciton %" PRIu8, cpu->regs.c);
+                break;
+        }
+    }
+}
+#endif
+
 void emulate_8080(intel8080 *cpu) {
     memory_t *memory = &cpu->mem;
-    uint16_t *pc = &cpu->regs.pc;
+
+#ifdef CPM
+    handle_cpm(cpu);
+#endif
+
+    uint16_t *pc = NULL;
+    if(cpu->ei && cpu->interrupt_pending) {
+        cpu->ei = false;
+        cpu->interrupt_pending = false;
+        cpu->is_halted = false;
+        *pc = cpu->interrupt_vector;
+    } else {
+        pc = &cpu->regs.pc;
+    }
+
+    if(cpu->is_halted)
+        return;
 
     uint8_t *instr = &memory->data[*pc];
     const instr_info_t ii = opcode_map[instr[0]];

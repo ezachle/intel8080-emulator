@@ -27,7 +27,10 @@ typedef struct {
 
     bool        is_halted;
     bool        ei;         // Enable Interrupt
+    bool        interrupt_pending;
+    uint8_t     interrupt_vector;
 
+    bool        quit;
     struct {
         bool        display[SCREEN_WIDTH*SCREEN_HEIGHT];
         uint8_t     scale_factor;

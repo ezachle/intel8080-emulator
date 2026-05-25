@@ -2,7 +2,7 @@ CC := gcc
 
 # tell compiler where additional header files are
 INCL := include
-CFLAGS := -Wall -Werror -I$(INCL) $(shell pkg-config --cflags raylib)
+CFLAGS := -Werror -I$(INCL) $(shell pkg-config --cflags raylib)
 LDFLAGS := $(shell pkg-config --libs raylib) -lm -lX11
 
 SRC_DIR := src
@@ -17,6 +17,9 @@ all: $(BUILD_NAME)
 
 debug: CFLAGS += -O0 -DDEBUG -g
 debug: all
+
+cpm: CFLAGS += -O0 -DCPM -DDEBUG -g
+cpm: all
 
 # Compiles all the .c files in src into .o
 $(SRC_DIR)/%.o: $(SRC_DIR)/%.c
