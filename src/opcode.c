@@ -813,64 +813,46 @@ void lxi(intel8080 *cpu, uint16_t data) {
     LOG_DEBUG(cpu->regs.pc, "%s: Copying data 0x%04X into register/SP", ii.instruction, data);
 #endif
     uint8_t opcode = CUR_OP(cpu);
-    switch(OP_DST_REG(cpu)) {
-        case REG_B:
-        case REG_C:
-            cpu->regs.bc = data;
-            break;
-        case REG_E:
-        case REG_D:
-            cpu->regs.de = data;
-            break;
-        case REG_H:
-        case REG_L:
-            cpu->regs.hl = data;
-            break;
+    uint16_t *reg_ptr = NULL;
+    switch(OP_DST_REG(cpu)){
         case REG_M:
         case REG_A:
-            cpu->regs.sp = data;
+            reg_ptr = &cpu->regs.sp;
             break;
         default:
-            LOG_WARNING(cpu->regs.pc, "Unknown LIX Code: 0x%02X", opcode);
+            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
             break;
     }
+    *reg_ptr = data;
 
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
+#define GET_SP(inc) (uint16_t)((cpu->regs.sp+inc) % 0x10000)
+
 void push_register(intel8080 *cpu) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    const uint8_t *instr = &cpu->mem.data[cpu->regs.pc];
-    LOG_DEBUG(cpu->regs.pc, "%s: Pushing data: 0x%02X%02X at SP 0x%04X", ii.instruction, *(instr+1), *(instr+2), cpu->regs.sp);
-#endif
     uint16_t *reg_ptr = NULL;
     switch(OP_DST_REG(cpu)){
-        case REG_B:
-        case REG_C:
-            reg_ptr = &cpu->regs.bc;
-            break;
-        case REG_E:
-        case REG_D:
-            reg_ptr = &cpu->regs.de;
-            break;
-        case REG_L:
-        case REG_H:
-            reg_ptr = &cpu->regs.hl;
-            break;
         case REG_M:
         case REG_A:
             reg_ptr = &cpu->regs.psw;
+            cpu->regs.f.unused1 = 1;
+            cpu->regs.f.unused2 = 0;
+            cpu->regs.f.unused3 = 1;
             break;
         default:
-            fprintf(stderr, "ERROR Unknown POP instruction: %2X\n", CUR_OP(cpu));
+            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
             break;
     }
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    const uint8_t *instr = &cpu->mem.data[cpu->regs.pc];
+    LOG_DEBUG(cpu->regs.pc, "%s: Pushing data: 0x%02X at SP 0x%04X", ii.instruction, *reg_ptr, cpu->regs.sp);
+#endif
 
-    //*reg_ptr = cpu->mem.data[cpu->regs.sp];
-    *reg_ptr = ((cpu->mem.data[cpu->regs.sp-1] << 0) & 0xFF) |
-               ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
-    cpu->regs.sp += 2;
+    cpu->mem.data[GET_SP(-1)] = (*reg_ptr >> 8) & 0xFF;
+    cpu->mem.data[GET_SP(-2)] = (*reg_ptr >> 0) & 0xFF;
+    cpu->regs.sp -= 2;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -899,16 +881,14 @@ void pop_register(intel8080 *cpu) {
             break;
     }
 
+    // TODO Properly take care of default cases in case of error
+    *reg_ptr = cpu->mem.data[GET_SP(0)] |
+              (cpu->mem.data[GET_SP(1)] << 8);
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) at SP 0x%04X", ii.instruction, *reg_ptr, cpu->regs.sp);
+    LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) from stack", ii.instruction, *reg_ptr);
 #endif
 
-
-    *reg_ptr = (cpu->mem.data[cpu->regs.sp-1] & 0x00FF) |
-               ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
-    modify_flags(*reg_ptr, &cpu->regs, ii.flag_access);
-
-    cpu->regs.sp -= 2;
+    cpu->regs.sp += 2;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -917,9 +897,9 @@ void ret(intel8080 *cpu) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     uint16_t old_pc = cpu->regs.pc;
 #endif
-    cpu->regs.pc = ((cpu->mem.data[cpu->regs.sp-1] << 0) & 0xFF)|
-                   ((cpu->mem.data[cpu->regs.sp-2] << 8) & 0xFF00);
-    cpu->regs.sp -= 2;
+    cpu->regs.pc = ((cpu->mem.data[GET_SP(0)] << 0) & 0xFF)|
+                   ((cpu->mem.data[GET_SP(1)] << 8) & 0xFF00);
+    cpu->regs.sp += 2;
 #ifdef DEBUG
     LOG_DEBUG(old_pc, "%s: Returning to address at 0x%04X", ii.instruction, cpu->regs.pc);
 #endif
@@ -933,12 +913,13 @@ void call(intel8080 *cpu, uint16_t data) {
 #endif
     cpu->regs.pc += INSTR_SIZE(cpu);
 
-    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 8) & 0xFF;
-    cpu->mem.data[cpu->regs.sp++] = (cpu->regs.pc >> 0) & 0xFF;
+    cpu->mem.data[GET_SP(-1)] = (cpu->regs.pc >> 8) & 0xFF;
+    cpu->mem.data[GET_SP(-2)] = (cpu->regs.pc >> 0) & 0xFF;
 #ifdef DEBUG
-    LOG_DEBUG(old_pc, "%s: Pushing PC(0x%04X) at SP 0x%04X", ii.instruction, cpu->regs.pc, cpu->regs.sp);
+    LOG_DEBUG(old_pc, "%s: Pushing PC(0x%04X) at SP 0x%02X", ii.instruction, cpu->regs.pc, GET_SP(-1));
 #endif
 
+    cpu->regs.sp -= 2;
     cpu->regs.pc = data;
 }
 
@@ -976,10 +957,9 @@ void dad(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to the HL register; Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.hl + *reg_ptr);
 #endif
 
-    uint16_t t = cpu->regs.hl + *reg_ptr;
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-
-    cpu->regs.hl = t;
+    uint32_t t = (uint32_t)cpu->regs.hl + (uint32_t)(*reg_ptr);
+    cpu->regs.f.carry = t > 0xFFFF;
+    cpu->regs.hl = (uint16_t)t;
 
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
