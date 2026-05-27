@@ -18,7 +18,10 @@ all: $(BUILD_NAME)
 debug: CFLAGS += -O0 -DDEBUG -g
 debug: all
 
-cpm: CFLAGS += -O0 -DCPM -DDEBUG -g
+cpm-debug: CFLAGS += -O0 -DCPM -DDEBUG -g
+cpm-debug: all
+
+cpm: CFLAGS += -DCPM
 cpm: all
 
 # Compiles all the .c files in src into .o
