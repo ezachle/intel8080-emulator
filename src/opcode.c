@@ -27,9 +27,9 @@ const instr_info_t opcode_map[0x100] = {
     [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
 
     [0xC0] = {"RNZ", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
-    [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
-    [0xE0] = {"RPO", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
-    [0xF0] = {"RP", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
+    [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnc}},
+    [0xE0] = {"RPO", 1, 5, MAKE_FLAG_NONE, {.f0 = rpo}},
+    [0xF0] = {"RP", 1, 5, MAKE_FLAG_NONE, {.f0 = rp}},
 
     [0xC2] = {"JNZ a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jnz}},
     [0xD2] = {"JNC a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jnc}},
@@ -290,8 +290,8 @@ const instr_info_t opcode_map[0x100] = {
     [0xFE] = {"CPI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = cpi}},
 
     [0x07] = {"RLC", 1, 4, MAKE_FLAG_CARRY, {.f0 = rlc}},
-    [0x17] = {"RRC", 1, 4, MAKE_FLAG_CARRY, {.f0 = rrc}},
-    [0x0F] = {"RAL", 1, 4, MAKE_FLAG_CARRY, {.f0 = ral}},
+    [0x0F] = {"RRC", 1, 4, MAKE_FLAG_CARRY, {.f0 = rrc}},
+    [0x17] = {"RAL", 1, 4, MAKE_FLAG_CARRY, {.f0 = ral}},
     [0x1F] = {"RAR", 1, 4, MAKE_FLAG_CARRY, {.f0 = rar}},
 
     [0x27] = {"DAA", 1, 4, MAKE_FLAG_ALL,   {.f0 = daa}},
@@ -304,8 +304,8 @@ const instr_info_t opcode_map[0x100] = {
     [0xDB] = {"IN d8", 2, 10, MAKE_FLAG_NONE,  {.f0 = unimplemented_instr}},
 
     [0x76] = {"HLT", 1, 7, MAKE_FLAG_NONE, {.f0 = hlt}},
-    [0xF3] = {"EI", 1, 4, MAKE_FLAG_NONE, {.f0 = ei}},
-    [0xFB] = {"DI", 1, 4, MAKE_FLAG_NONE, {.f0 = di}},
+    [0xF3] = {"DI", 1, 4, MAKE_FLAG_NONE, {.f0 = di}},
+    [0xFB] = {"EI", 1, 4, MAKE_FLAG_NONE, {.f0 = ei}},
 };
 
 typedef enum {
@@ -330,12 +330,15 @@ typedef enum {
 #define OP_DST_REG(cpu)  ((CUR_OP(cpu) & 0x38) >> 3)
 #define OP_SRC_REG(cpu)  (CUR_OP(cpu) & 0x7)
 
-#define SET_FLAG(flags, x) (flags &= (1 << x))
+#define SET_FLAG(flags, x) (flags |= (1 << x))
 
 typedef enum {
     CARRY = 0,
+    UNUSED1 = 1,
     PARITY = 2,
+    UNUSED2 = 3,
     AUX_CARRY = 4,
+    UNUSED3 = 5,
     ZERO = 6,
     SIGN = 7,
     NONE,
@@ -356,7 +359,7 @@ static void swap_u16(uint16_t *a, uint16_t *b) {
 
 static void modify_flags(uint16_t value, registers_t *regs, const uint8_t flag_access) {
     if(HAS_ACCESS(flag_access, SIGN)) {
-        regs->f.sign = (value & (1 << SIGN)) & 0x1;
+        regs->f.sign = (bool)(value & (1 << SIGN));
     }
 
     if(HAS_ACCESS(flag_access, ZERO)) {
@@ -366,20 +369,25 @@ static void modify_flags(uint16_t value, registers_t *regs, const uint8_t flag_a
     // 0 == Even Parity
     // 1 == Odd Parity
     if(HAS_ACCESS(flag_access, PARITY)) {
-        regs->f.parity ^= (value >> 8);
-        regs->f.parity ^= (regs->f.parity >> 4);
-        regs->f.parity ^= (regs->f.parity >> 2);
-        regs->f.parity ^= (regs->f.parity>> 1);
+        uint8_t x = (uint8_t)value;
+        x ^= (x >> 4);
+        x ^= (x >> 2);
+        x ^= (x >> 1);
+        regs->f.parity = (x & 1) ? 0 : 1;
     }
 
     if(HAS_ACCESS(flag_access, AUX_CARRY)) {
-        regs->f.aux_carry = (value & 0x10);
+        regs->f.aux_carry = (value >> 4);
     }
 
     // Check for carry
     if(HAS_ACCESS(flag_access, CARRY)) {
         regs->f.carry = (value & 0xFF00) ? 1 : 0;
     }
+
+    regs->f.unused1 = 1;
+    regs->f.unused2 = 0;
+    regs->f.unused3 = 0;
 }
 
 #ifdef DEBUG
@@ -418,6 +426,27 @@ static uint8_t* get_register(intel8080 *cpu, registers reg) {
             return &cpu->mem.data[regs->hl];
         case REG_A:
             return &regs->a;
+        default:
+            LOG_ERROR(cpu->regs.pc, "Unknown register %d", reg);
+            return NULL;
+    }
+}
+
+static uint16_t* get_register_u16(intel8080 *cpu, registers reg) {
+    registers_t *regs = &cpu->regs;
+    switch(reg) {
+        case REG_B:
+        case REG_C:
+            return &regs->bc;
+        case REG_D:
+        case REG_E:
+            return &regs->de;
+        case REG_H:
+        case REG_L:
+            return &regs->hl;
+        case REG_A:
+        case REG_M:
+            return &regs->psw;
         default:
             LOG_ERROR(cpu->regs.pc, "Unknown register %d", reg);
             return NULL;
@@ -470,7 +499,7 @@ void sta(intel8080 *cpu, uint16_t addr) {
 void lda(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying data from memory address 0x%04X(0x%02X) into the accumulator", ii.instruction, addr, cpu->regs.a);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying data from memory address 0x%04X(0x%02X) into the accumulator", ii.instruction, addr, cpu->mem.data[addr]);
 #endif
     cpu->regs.a = cpu->mem.data[addr];
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -478,7 +507,7 @@ void lda(intel8080 *cpu, uint16_t addr) {
 
 void ldax(intel8080 *cpu) {
     uint16_t *reg_ptr = NULL;
-    if(CUR_OP(cpu) == 0x02) {
+    if(CUR_OP(cpu) == 0x0A) {
         reg_ptr = &cpu->regs.bc;
     } else {
         reg_ptr = &cpu->regs.de;
@@ -512,7 +541,7 @@ void stax(intel8080 *cpu) {
 void lhld(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Loading data at address 0x%04X(0x%02X) in register HL", ii.instruction, addr, cpu->mem.data[cpu->regs.hl]);
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting HL to data at address 0x%04X(0x%02X)", ii.instruction, addr, cpu->mem.data[addr]);
 #endif
     cpu->regs.hl = cpu->mem.data[addr];
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -539,10 +568,10 @@ void xchg(intel8080 *cpu) {
 void xthl(intel8080 *cpu) {
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP+1(0x%02X) and SP(0x%02X)", ii.instruction, cpu->regs.hl, cpu->regs.sp+1, cpu->regs.sp);
+    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP+1(0x%02X) and SP+2(0x%02X)", ii.instruction, cpu->regs.hl, cpu->mem.data[cpu->regs.sp+1], cpu->mem.data[cpu->regs.sp+2]);
 #endif
-    swap_u8(&cpu->regs.l, &cpu->mem.data[cpu->regs.sp]);
-    swap_u8(&cpu->regs.h, &cpu->mem.data[cpu->regs.sp + 1]);
+    swap_u8(&cpu->regs.l, &cpu->mem.data[cpu->regs.sp+1]);
+    swap_u8(&cpu->regs.h, &cpu->mem.data[cpu->regs.sp+2]);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -666,7 +695,7 @@ void cp(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Positive; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 0);
 #endif
-    if(cpu->regs.f.zero == 0) call(cpu, addr);
+    if(cpu->regs.f.sign == 0) call(cpu, addr);
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -774,7 +803,7 @@ void cm(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Minus; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 1);
 #endif
-    if(cpu->regs.f.zero == 1) call(cpu, addr);
+    if(cpu->regs.f.sign == 1) call(cpu, addr);
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -933,24 +962,12 @@ void sphl(intel8080 *cpu) {
 void dad(intel8080 *cpu) {
     uint16_t *reg_ptr = NULL;
     switch(OP_DST_REG(cpu)){
-        case REG_B:
-        case REG_C:
-            reg_ptr = &cpu->regs.bc;
-            break;
-        case REG_E:
-        case REG_D:
-            reg_ptr = &cpu->regs.de;
-            break;
-        case REG_H:
-        case REG_L:
-            reg_ptr = &cpu->regs.hl;
-            break;
         case REG_M:
         case REG_A:
             reg_ptr = &cpu->regs.sp;
             break;
         default:
-            fprintf(stderr, "ERROR Unknown DAD instruction: %2X\n", CUR_OP(cpu));
+            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
             break;
     };
 
@@ -1088,15 +1105,15 @@ void inx(intel8080 *cpu) {
     switch(OP_DST_REG(cpu)) {
         case REG_B:
         case REG_C:
-            LOG_DEBUG(cpu->regs.pc, "B: 0x%02X C: 0x%02X", cpu->regs.b , cpu->regs.c );
+            LOG_DEBUG(cpu->regs.pc, "BC: 0x%02X", cpu->regs.bc);
             break;
         case REG_E:
         case REG_D:
-            LOG_DEBUG(cpu->regs.pc, "D: 0x%02X E: 0x%02X", cpu->regs.d , cpu->regs.e );
+            LOG_DEBUG(cpu->regs.pc, "DE: 0x%02X", cpu->regs.de);
             break;
         case REG_H:
         case REG_L:
-            LOG_DEBUG(cpu->regs.pc, "H: 0x%02X L: 0x%02X", cpu->regs.h , cpu->regs.l );
+            LOG_DEBUG(cpu->regs.pc, "HL: 0x%02X", cpu->regs.hl);
             break;
         case REG_M:
         case REG_A:
@@ -1104,28 +1121,14 @@ void inx(intel8080 *cpu) {
             break;
     };
 #endif
+    uint16_t *reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
     switch(OP_DST_REG(cpu)){
-        case REG_B:
-        case REG_C:
-            cpu->regs.b++;
-            cpu->regs.c++;
-            break;
-        case REG_E:
-        case REG_D:
-            cpu->regs.d++;
-            cpu->regs.e++;
-            break;
-        case REG_H:
-        case REG_L:
-            cpu->regs.h++;
-            cpu->regs.l++;
-            break;
         case REG_M:
         case REG_A:
             cpu->regs.sp++;
             break;
         default:
-            fprintf(stderr, "ERROR Unknown INX instruction: %2X\n", CUR_OP(cpu));
+            (*reg_ptr)++;
             break;
     };
 
@@ -1140,15 +1143,15 @@ void dcx(intel8080 *cpu) {
     switch(OP_DST_REG(cpu)) {
         case REG_B:
         case REG_C:
-            LOG_DEBUG(cpu->regs.pc, "B: 0x%02X C: 0x%02X", cpu->regs.b , cpu->regs.c );
+            LOG_DEBUG(cpu->regs.pc, "BC: 0x%02X", cpu->regs.bc);
             break;
         case REG_E:
         case REG_D:
-            LOG_DEBUG(cpu->regs.pc, "D: 0x%02X E: 0x%02X", cpu->regs.d , cpu->regs.e );
+            LOG_DEBUG(cpu->regs.pc, "DE: 0x%02X", cpu->regs.de);
             break;
         case REG_H:
         case REG_L:
-            LOG_DEBUG(cpu->regs.pc, "H: 0x%02X L: 0x%02X", cpu->regs.h , cpu->regs.l );
+            LOG_DEBUG(cpu->regs.pc, "HL: 0x%02X", cpu->regs.hl);
             break;
         case REG_M:
         case REG_A:
@@ -1156,28 +1159,14 @@ void dcx(intel8080 *cpu) {
             break;
     };
 #endif
+    uint16_t *reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
     switch(OP_DST_REG(cpu)){
-        case REG_B:
-        case REG_C:
-            cpu->regs.b--;
-            cpu->regs.c--;
-            break;
-        case REG_E:
-        case REG_D:
-            cpu->regs.d--;
-            cpu->regs.e--;
-            break;
-        case REG_H:
-        case REG_L:
-            cpu->regs.h--;
-            cpu->regs.l--;
-            break;
         case REG_M:
         case REG_A:
             cpu->regs.sp--;
             break;
         default:
-            fprintf(stderr, "ERROR Unknown DCX instruction: %2X\n", CUR_OP(cpu));
+            (*reg_ptr)--;
             break;
     };
 
@@ -1218,6 +1207,7 @@ void ani(intel8080 *cpu, uint8_t data) {
 #endif
     cpu->regs.a = x;
     modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.f.carry = 0;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1245,7 +1235,7 @@ void ori(intel8080 *cpu, uint8_t data) {
 }
 
 void xra(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+    uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
     uint8_t x = cpu->regs.a ^ *reg_ptr;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
@@ -1268,7 +1258,7 @@ void xri(intel8080 *cpu, uint8_t data) {
 }
 
 void cmp(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+    uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
 
     uint16_t t = cpu->regs.a - *reg_ptr;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));

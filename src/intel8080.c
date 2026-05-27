@@ -56,6 +56,13 @@ static bool load_rom(intel8080 *cpu, char *rom_name) {
 bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
     reset_memory(&cpu->regs, &cpu->mem, start_pc);
 
+    cpu->regs.f.unused1 = 1;
+    cpu->regs.f.unused2 = 0;
+    cpu->regs.f.unused3 = 0;
+
+    cpu->regs.sp = 0;
+
+    cpu->cycles = 0;
     cpu->is_halted = false;
     cpu->ei = false;
     cpu->interrupt_pending = false;
@@ -70,10 +77,6 @@ bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
     memset(cpu->io.display, 0, sizeof(cpu->io.display));
     cpu->io.scale_factor = 2;
 
-    cpu->cycles = 0;
-    cpu->is_halted = false;
-    cpu->ei = false;
-
     return true;
 }
 
@@ -84,30 +87,27 @@ void destroy_8080(intel8080 *cpu) {
 
 #ifdef CPM
 void handle_cpm(intel8080 *cpu) {
-    if(cpu->regs.pc == 0x0000) {
-        LOG(cpu->regs.pc, "CPM Program has reached Hook");
-        cpu->quit = true;
-        return;
-    }
-
     if(cpu->regs.pc == 0x0005) {
         switch(cpu->regs.c) {
             case 2:
                 printf("%c", cpu->regs.e);
-                fflush(stdout);
                 break;
             case 9:
-                uint16_t str_addr = cpu->regs.de;
-                while(cpu->mem.data[str_addr] != '$') {
-                    printf("%c", cpu->mem.data[str_addr]);
-                    str_addr++;
+                {
+                    uint16_t str_addr = cpu->regs.de;
+                    while(cpu->mem.data[str_addr] != '$') {
+                        printf("%c", cpu->mem.data[str_addr++]);
+                    }
+                    printf("\n");
                 }
-                fflush(stdout);
                 break;
             default:
                 LOG_WARNING(cpu->regs.pc, "Unimplemneted CP/M Instruciton %" PRIu8, cpu->regs.c);
                 break;
         }
+    } else if(cpu->regs.pc == 0x0000) {
+        LOG(cpu->regs.pc, "CPM Program Error");
+        cpu->quit = true;
     }
 }
 #endif
@@ -117,16 +117,15 @@ void emulate_8080(intel8080 *cpu) {
 
 #ifdef CPM
     handle_cpm(cpu);
+    if(cpu->quit) return;
 #endif
 
-    uint16_t *pc = NULL;
+    uint16_t *pc = &cpu->regs.pc;
     if(cpu->ei && cpu->interrupt_pending) {
         cpu->ei = false;
         cpu->interrupt_pending = false;
         cpu->is_halted = false;
         *pc = cpu->interrupt_vector;
-    } else {
-        pc = &cpu->regs.pc;
     }
 
     if(cpu->is_halted)
@@ -138,6 +137,19 @@ void emulate_8080(intel8080 *cpu) {
         LOG_WARNING(cpu->regs.pc, "Unimplemented opcode: %02X", instr[0]);
         *pc += 1;
     } else {
+        if(ii.handler.f0 != NULL) {
+            if(ii.op_bytes == 1) {
+                ii.handler.f0(cpu);
+            } else if(ii.op_bytes == 2) {
+                ii.handler.f1(cpu, *(instr+1));
+            } else if(ii.op_bytes == 3) {
+                ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
+            }
+        } else {
+            cpu->regs.pc += ii.op_bytes;
+        }
+
+        cpu->cycles += ii.cycles;
 #ifdef DEBUG
         printf("%-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
                 ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
@@ -146,6 +158,7 @@ void emulate_8080(intel8080 *cpu) {
         printf("    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.sp, cpu->mem.data[cpu->regs.sp]);
         printf("   pc: 0x%04X\n", cpu->regs.pc);
         printf("   af: 0x%04X\n", cpu->regs.psw);
+        printf("    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.psw, cpu->mem.data[cpu->regs.psw]);
         printf("    Flags:\n");
         printf("     carry: %" PRIu8"\n", cpu->regs.f.carry);
         printf("     parity: %" PRIu8"\n", cpu->regs.f.parity);
@@ -162,22 +175,9 @@ void emulate_8080(intel8080 *cpu) {
         for(uint8_t i = 0; i < ii.op_bytes; i++) {
             printf(" %02X", *(instr+i));
         }
-        printf("\nTotal Cycles: %" PRIu64, cpu->cycles + ii.cycles);
+        printf("\nTotal Cycles: %" PRIu64, cpu->cycles);
         printf("\n");
 #endif
-        if(ii.handler.f0 != NULL) {
-            if(ii.op_bytes == 1) {
-                ii.handler.f0(cpu);
-            } else if(ii.op_bytes == 2) {
-                ii.handler.f1(cpu, *(instr+1));
-            } else if(ii.op_bytes == 3) {
-                ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
-            }
-        } else {
-            cpu->regs.pc += ii.op_bytes;
-        }
-
-        cpu->cycles += ii.cycles;
     }
 }
 

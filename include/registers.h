@@ -8,7 +8,7 @@ typedef union {
         uint8_t parity: 1;
         uint8_t unused2: 1; // always 0
         uint8_t aux_carry: 1;
-        uint8_t unused3: 1; // always 1
+        uint8_t unused3: 1; // always 0
         uint8_t zero: 1;
         uint8_t sign: 1;
     };
