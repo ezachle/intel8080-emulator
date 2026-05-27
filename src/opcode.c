@@ -12,7 +12,9 @@ const instr_info_t opcode_map[0x100] = {
     [0xC9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
     [0xD9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
     [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+
     [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
+    [0xF9] = {"SPHL", 1, 5, MAKE_FLAG_NONE, {.f0 = sphl}},
 
     [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
     [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
@@ -917,6 +919,15 @@ void pchl(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Setting PC to contents of HL(0x%02X)", ii.instruction, cpu->regs.hl); 
 #endif
     cpu->regs.pc = cpu->regs.hl;
+}
+
+void sphl(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting SP to contents of HL(0x%02X)", ii.instruction, cpu->regs.hl); 
+#endif
+    cpu->regs.sp = cpu->regs.hl;
+    cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void dad(intel8080 *cpu) {

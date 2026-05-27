@@ -119,11 +119,11 @@ void cm(intel8080 *cpu, uint16_t addr);
 
 void call(intel8080 *cpu, uint16_t data);
 void ret(intel8080 *cpu);
-void pchl(intel8080 *cpu);
-void rst(intel8080 *cpu);
-
 // RST  Restart instr used woth interrupts
 void rst(intel8080 *cpu);
+
+void pchl(intel8080 *cpu);
+void sphl(intel8080 *cpu);
 
 // ===== Logical Group =====
 //ANA Logical AND with Accumulator
