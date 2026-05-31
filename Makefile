@@ -18,8 +18,8 @@ all: $(BUILD_NAME)
 debug: CFLAGS += -O0 -DDEBUG -g
 debug: all
 
-cpm-debug: CFLAGS += -O0 -DCPM -DDEBUG -g
-cpm-debug: all
+cpm-verbose: CFLAGS += -O0 -DCPM -DVERBOSE -g
+cpm-verbose: all
 
 cpm: CFLAGS += -DCPM
 cpm: all

@@ -91,22 +91,21 @@ void handle_cpm(intel8080 *cpu) {
         switch(cpu->regs.c) {
             case 2:
                 printf("%c", cpu->regs.e);
+                fflush(stdout);
                 break;
             case 9:
-                {
-                    uint16_t str_addr = cpu->regs.de;
-                    while(cpu->mem.data[str_addr] != '$') {
-                        printf("%c", cpu->mem.data[str_addr++]);
-                    }
-                    printf("\n");
+                uint16_t str_addr = cpu->regs.de;
+                while(cpu->mem.data[str_addr] != '$') {
+                    printf("%c", cpu->mem.data[str_addr++]);
                 }
+                printf("\n");
+                fflush(stdout);
                 break;
             default:
                 LOG_WARNING(cpu->regs.pc, "Unimplemneted CP/M Instruciton %" PRIu8, cpu->regs.c);
                 break;
         }
     } else if(cpu->regs.pc == 0x0000) {
-        LOG(cpu->regs.pc, "CPM Program Error");
         cpu->quit = true;
     }
 }
@@ -115,11 +114,6 @@ void handle_cpm(intel8080 *cpu) {
 void emulate_8080(intel8080 *cpu) {
     memory_t *memory = &cpu->mem;
 
-#ifdef CPM
-    handle_cpm(cpu);
-    if(cpu->quit) return;
-#endif
-
     uint16_t *pc = &cpu->regs.pc;
     if(cpu->ei && cpu->interrupt_pending) {
         cpu->ei = false;
@@ -127,6 +121,25 @@ void emulate_8080(intel8080 *cpu) {
         cpu->is_halted = false;
         *pc = cpu->interrupt_vector;
     }
+
+#ifdef CPM
+#ifdef VERBOSE
+    fprintf(stderr, "PC: %04X AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X, CYC: %" PRIu64"\t (%02X %02X %02X %02X)\n",
+            *pc,
+            cpu->regs.psw,
+            cpu->regs.bc,
+            cpu->regs.de,
+            cpu->regs.hl,
+            cpu->regs.sp,
+            cpu->cycles,
+            memory->data[*pc],
+            memory->data[*pc+1],
+            memory->data[*pc+2],
+            memory->data[*pc+3]);
+#endif
+    handle_cpm(cpu);
+    if(cpu->quit) return;
+#endif
 
     if(cpu->is_halted)
         return;
@@ -137,6 +150,34 @@ void emulate_8080(intel8080 *cpu) {
         LOG_WARNING(cpu->regs.pc, "Unimplemented opcode: %02X", instr[0]);
         *pc += 1;
     } else {
+#ifdef DEBUG
+        fprintf(stderr, "%-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
+                ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
+        fprintf(stderr, "  Registers:\n");
+        fprintf(stderr, "   sp: 0x%04X\n", cpu->regs.sp);
+        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.sp, cpu->mem.data[cpu->regs.sp]);
+        fprintf(stderr, "   pc: 0x%04X\n", cpu->regs.pc);
+        fprintf(stderr, "   af: 0x%04X\n", cpu->regs.psw);
+        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.psw, cpu->mem.data[cpu->regs.psw]);
+        fprintf(stderr, "    Flags:\n");
+        fprintf(stderr, "     carry: %" PRIu8"\n", cpu->regs.f.carry);
+        fprintf(stderr, "     parity: %" PRIu8"\n", cpu->regs.f.parity);
+        fprintf(stderr, "     aux_carry: %" PRIu8"\n", cpu->regs.f.aux_carry);
+        fprintf(stderr, "     zero: %" PRIu8"\n", cpu->regs.f.zero);
+        fprintf(stderr, "     sign: %" PRIu8"\n", cpu->regs.f.sign);
+        fprintf(stderr, "   bc: 0x%04X\n", cpu->regs.bc);
+        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.bc, cpu->mem.data[cpu->regs.bc]);
+        fprintf(stderr, "   de: 0x%04X\n", cpu->regs.de);
+        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.de, cpu->mem.data[cpu->regs.de]);
+        fprintf(stderr, "   hl: 0x%04X\n", cpu->regs.hl);
+        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.hl, cpu->mem.data[cpu->regs.hl]);
+        fprintf(stderr, "  Data:");
+        for(uint8_t i = 0; i < ii.op_bytes; i++) {
+            fprintf(stderr, " %02X", *(instr+i));
+        }
+        fprintf(stderr, "\nTotal Cycles: %" PRIu64, cpu->cycles);
+        fprintf(stderr, "\n");
+#endif
         if(ii.handler.f0 != NULL) {
             if(ii.op_bytes == 1) {
                 ii.handler.f0(cpu);
@@ -150,34 +191,6 @@ void emulate_8080(intel8080 *cpu) {
         }
 
         cpu->cycles += ii.cycles;
-#ifdef DEBUG
-        printf("%-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
-                ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
-        printf("  Registers:\n");
-        printf("   sp: 0x%04X\n", cpu->regs.sp);
-        printf("    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.sp, cpu->mem.data[cpu->regs.sp]);
-        printf("   pc: 0x%04X\n", cpu->regs.pc);
-        printf("   af: 0x%04X\n", cpu->regs.psw);
-        printf("    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.psw, cpu->mem.data[cpu->regs.psw]);
-        printf("    Flags:\n");
-        printf("     carry: %" PRIu8"\n", cpu->regs.f.carry);
-        printf("     parity: %" PRIu8"\n", cpu->regs.f.parity);
-        printf("     aux_carry: %" PRIu8"\n", cpu->regs.f.aux_carry);
-        printf("     zero: %" PRIu8"\n", cpu->regs.f.zero);
-        printf("     sign: %" PRIu8"\n", cpu->regs.f.sign);
-        printf("   bc: 0x%04X\n", cpu->regs.bc);
-        printf("    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.bc, cpu->mem.data[cpu->regs.bc]);
-        printf("   de: 0x%04X\n", cpu->regs.de);
-        printf("    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.de, cpu->mem.data[cpu->regs.de]);
-        printf("   hl: 0x%04X\n", cpu->regs.hl);
-        printf("    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.hl, cpu->mem.data[cpu->regs.hl]);
-        printf("  Data:");
-        for(uint8_t i = 0; i < ii.op_bytes; i++) {
-            printf(" %02X", *(instr+i));
-        }
-        printf("\nTotal Cycles: %" PRIu64, cpu->cycles);
-        printf("\n");
-#endif
     }
 }
 
