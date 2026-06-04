@@ -1,17 +1,28 @@
 #include "log.h"
 #include "opcode.h"
 
-const instr_info_t opcode_map[0x100] = {
+extern int global_print;
+extern int global_cyc_count;
+
+instr_info_t opcode_map[0x100] = {
     [0x00] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
     [0x10] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
     [0x20] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
     [0x30] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
+
+    [0x08] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
+    [0x18] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
+    [0x28] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
+    [0x38] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
 
     [0xCB] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
     [0xC3] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
     [0xC9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
     [0xD9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
     [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xDD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xED] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xFD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
 
     [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
     [0xF9] = {"SPHL", 1, 5, MAKE_FLAG_NONE, {.f0 = sphl}},
@@ -91,23 +102,23 @@ const instr_info_t opcode_map[0x100] = {
     [0xCE] = {"ACI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = aci}},
     [0xDE] = {"SBI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = sbi}},
 
-    [0x88] = {"ADC B", 1, 5, MAKE_FLAG_NONE, {.f0 = adc}},
-    [0x89] = {"ADC C", 1, 5, MAKE_FLAG_NONE, {.f0 = adc}},
-    [0x8A] = {"ADC D", 1, 5, MAKE_FLAG_NONE, {.f0 = adc}},
-    [0x8B] = {"ADC E", 1, 5, MAKE_FLAG_NONE, {.f0 = adc}},
-    [0x8C] = {"ADC H", 1, 5, MAKE_FLAG_NONE, {.f0 = adc}},
-    [0x8D] = {"ADC L", 1, 5, MAKE_FLAG_NONE, {.f0 = adc}},
-    [0x8E] = {"ADC M", 1, 7, MAKE_FLAG_NONE, {.f0 = adc}},
-    [0x8F] = {"ADC A", 1, 5, MAKE_FLAG_NONE, {.f0 = adc}},
+    [0x88] = {"ADC B", 1, 5, MAKE_FLAG_ALL, {.f0 = adc}},
+    [0x89] = {"ADC C", 1, 5, MAKE_FLAG_ALL, {.f0 = adc}},
+    [0x8A] = {"ADC D", 1, 5, MAKE_FLAG_ALL, {.f0 = adc}},
+    [0x8B] = {"ADC E", 1, 5, MAKE_FLAG_ALL, {.f0 = adc}},
+    [0x8C] = {"ADC H", 1, 5, MAKE_FLAG_ALL, {.f0 = adc}},
+    [0x8D] = {"ADC L", 1, 5, MAKE_FLAG_ALL, {.f0 = adc}},
+    [0x8E] = {"ADC M", 1, 7, MAKE_FLAG_ALL, {.f0 = adc}},
+    [0x8F] = {"ADC A", 1, 5, MAKE_FLAG_ALL, {.f0 = adc}},
 
-    [0x98] = {"SBB B", 1, 5, MAKE_FLAG_NONE, {.f0 = sbb}},
-    [0x99] = {"SBB C", 1, 5, MAKE_FLAG_NONE, {.f0 = sbb}},
-    [0x9A] = {"SBB D", 1, 5, MAKE_FLAG_NONE, {.f0 = sbb}},
-    [0x9B] = {"SBB E", 1, 5, MAKE_FLAG_NONE, {.f0 = sbb}},
-    [0x9C] = {"SBB H", 1, 5, MAKE_FLAG_NONE, {.f0 = sbb}},
-    [0x9D] = {"SBB L", 1, 5, MAKE_FLAG_NONE, {.f0 = sbb}},
-    [0x9E] = {"SBB M", 1, 7, MAKE_FLAG_NONE, {.f0 = sbb}},
-    [0x9F] = {"SBB A", 1, 5, MAKE_FLAG_NONE, {.f0 = sbb}},
+    [0x98] = {"SBB B", 1, 5, MAKE_FLAG_ALL, {.f0 = sbb}},
+    [0x99] = {"SBB C", 1, 5, MAKE_FLAG_ALL, {.f0 = sbb}},
+    [0x9A] = {"SBB D", 1, 5, MAKE_FLAG_ALL, {.f0 = sbb}},
+    [0x9B] = {"SBB E", 1, 5, MAKE_FLAG_ALL, {.f0 = sbb}},
+    [0x9C] = {"SBB H", 1, 5, MAKE_FLAG_ALL, {.f0 = sbb}},
+    [0x9D] = {"SBB L", 1, 5, MAKE_FLAG_ALL, {.f0 = sbb}},
+    [0x9E] = {"SBB M", 1, 7, MAKE_FLAG_ALL, {.f0 = sbb}},
+    [0x9F] = {"SBB A", 1, 5, MAKE_FLAG_ALL, {.f0 = sbb}},
 
     [0x05] = {"DCR B", 1, 5, MAKE_FLAG_SZAP, {.f0 = dcr}},
     [0x15] = {"DCR D", 1, 5, MAKE_FLAG_SZAP, {.f0 = dcr}},
@@ -268,14 +279,14 @@ const instr_info_t opcode_map[0x100] = {
     [0xE6] = {"ANI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = ani}},
     [0xF6] = {"ORI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = ori}},
 
-    [0xA8] = {"XRA B", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
-    [0xA9] = {"XRA C", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
-    [0xAA] = {"XRA D", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
-    [0xAB] = {"XRA E", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
-    [0xAC] = {"XRA H", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
-    [0xAD] = {"XRA L", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xA8] = {"XRA B", 1, 4, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xA9] = {"XRA C", 1, 4, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAA] = {"XRA D", 1, 4, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAB] = {"XRA E", 1, 4, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAC] = {"XRA H", 1, 4, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAD] = {"XRA L", 1, 4, MAKE_FLAG_ALL, {.f0 = xra}},
     [0xAE] = {"XRA M", 1, 7, MAKE_FLAG_ALL, {.f0 = xra}},
-    [0xAF] = {"XRA A", 1, 5, MAKE_FLAG_ALL, {.f0 = xra}},
+    [0xAF] = {"XRA A", 1, 4, MAKE_FLAG_ALL, {.f0 = xra}},
 
     [0xB8] = {"CMP B", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
     [0xB9] = {"CMP C", 1, 5, MAKE_FLAG_ALL, {.f0 = cmp}},
@@ -328,11 +339,28 @@ typedef enum {
 
 #define FLAG_ACCESS(cpu) (GET_INSTR_CPU(cpu).flag_access)
 #define HAS_ACCESS(flag_access, x) (flag_access & (1 << x))
+#define SET_FLAG(flags, x) (flags |= (1 << x))
+#define SET_UNUSED(flags) \
+    flags.unused1 = 1; \
+    flags.unused2 = 0; \
+    flags.unused3 = 0;
 
 #define OP_DST_REG(cpu)  ((CUR_OP(cpu) & 0x38) >> 3)
 #define OP_SRC_REG(cpu)  (CUR_OP(cpu) & 0x7)
 
-#define SET_FLAG(flags, x) (flags |= (1 << x))
+#define PRINT_STATE \
+    fprintf(stderr, "PC: %04X AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X, CYC: %" PRIu64"\t (%02X %02X %02X %02X)\n", \
+    cpu->regs.pc, \
+    cpu->regs.psw, \
+    cpu->regs.bc, \
+    cpu->regs.de, \
+    cpu->regs.hl, \
+    cpu->regs.sp, \
+    cpu->cycles, \
+    cpu->mem.data[cpu->regs.pc], \
+    cpu->mem.data[cpu->regs.pc+1], \
+    cpu->mem.data[cpu->regs.pc+2], \
+    cpu->mem.data[cpu->regs.pc+3]);
 
 typedef enum {
     CARRY = 0,
@@ -358,14 +386,31 @@ static void swap_u16(uint16_t *a, uint16_t *b) {
     *b = t;
 }
 
+static void modify_carry(uint8_t a, uint8_t b, registers_t *regs, bool is_sub) {
+    if(is_sub) {
+        regs->f.carry = (uint8_t)(a < b) ? 1 : 0;
+    } else {
+        regs->f.carry = (a + b) > 255 ? 1 : 0;
+    }
+}
+
+static void modify_aux_carry(uint8_t a, uint8_t b, registers_t *regs, bool is_sub) {
+    if(is_sub) {
+        // By XOR'ing the two registers and its result, it reveals the changes
+        // between the three - namely the aux carry bit here
+        regs->f.aux_carry = (~(a ^ b ^ (a-b)) >> 4) & 0x01;
+    } else {
+        regs->f.aux_carry = ((a ^ b ^ (a+b)) >> 4) & 0x01;
+    }
+}
 
 static void modify_flags(uint16_t value, registers_t *regs, const uint8_t flag_access) {
     if(HAS_ACCESS(flag_access, SIGN)) {
-        regs->f.sign = (bool)(value & (1 << SIGN));
+        regs->f.sign = (value & (1 << SIGN)) ? 1 : 0;
     }
 
     if(HAS_ACCESS(flag_access, ZERO)) {
-        regs->f.zero = (value == 0);
+        regs->f.zero = ((uint8_t)value == 0) ? 1 : 0;
     }
 
     // 0 == Even Parity
@@ -378,14 +423,7 @@ static void modify_flags(uint16_t value, registers_t *regs, const uint8_t flag_a
         regs->f.parity = (x & 1) ? 0 : 1;
     }
 
-    // Check for carry
-    if(HAS_ACCESS(flag_access, CARRY)) {
-        regs->f.carry = (value & 0xFF00) ? 1 : 0;
-    }
-
-    regs->f.unused1 = 1;
-    regs->f.unused2 = 0;
-    regs->f.unused3 = 0;
+    SET_UNUSED(regs->f)
 }
 
 #ifdef DEBUG
@@ -591,8 +629,13 @@ void rnz(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Zero; Result: %d", ii.instruction, !cpu->regs.f.zero);
 #endif
-    if(cpu->regs.f.zero == 0) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.zero == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void rnc(intel8080 *cpu) {
@@ -600,8 +643,13 @@ void rnc(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Carry; Result: %d", ii.instruction, !cpu->regs.f.carry);
 #endif
-    if(cpu->regs.f.carry == 0) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.carry == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void rpo(intel8080 *cpu) {
@@ -609,8 +657,13 @@ void rpo(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Return if Parity Odd; Result: %d", ii.instruction, !cpu->regs.f.parity);
 #endif
-    if(cpu->regs.f.parity == 0) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.parity == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void rp(intel8080 *cpu) {
@@ -618,8 +671,13 @@ void rp(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Return if Sign Positive; Result: %d", ii.instruction, !cpu->regs.f.sign);
 #endif
-    if(cpu->regs.f.sign == 0) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.sign == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void jnz(intel8080 *cpu, uint16_t addr) {
@@ -671,8 +729,13 @@ void cnz(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Not Zero; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero == 0);
 #endif
-    if(cpu->regs.f.zero == 0) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.zero == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void cnc(intel8080 *cpu, uint16_t addr) {
@@ -680,8 +743,13 @@ void cnc(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Not Carry; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry == 0);
 #endif
-    if(cpu->regs.f.carry == 0) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.carry == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void cpo(intel8080 *cpu, uint16_t addr) {
@@ -689,8 +757,13 @@ void cpo(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Parity Odd; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity == 0);
 #endif
-    if(cpu->regs.f.parity == 0) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.parity == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void cp(intel8080 *cpu, uint16_t addr) {
@@ -698,8 +771,13 @@ void cp(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Positive; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 0);
 #endif
-    if(cpu->regs.f.sign == 0) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.sign == 0) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void rz(intel8080 *cpu) {
@@ -707,8 +785,13 @@ void rz(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Return if Zero; Result: %" PRIu8, ii.instruction, cpu->regs.f.zero);
 #endif
-    if(cpu->regs.f.zero == 1) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.zero == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void rc(intel8080 *cpu) {
@@ -716,8 +799,13 @@ void rc(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s Return if Carry; Result: %" PRIu8, ii.instruction, cpu->regs.f.carry);
 #endif
-    if(cpu->regs.f.carry == 1) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.carry == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void rpe(intel8080 *cpu) {
@@ -725,8 +813,13 @@ void rpe(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Return if Parity Even; Result: %" PRIu8, ii.instruction, cpu->regs.f.parity);
 #endif
-    if(cpu->regs.f.parity == 1) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.parity == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void rm(intel8080 *cpu) {
@@ -734,8 +827,13 @@ void rm(intel8080 *cpu) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Return if Sign Minus; Result: %" PRIu8, ii.instruction, cpu->regs.f.sign);
 #endif
-    if(cpu->regs.f.sign == 1) ret(cpu);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.sign == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 6;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void jz(intel8080 *cpu, uint16_t addr) {
@@ -779,8 +877,13 @@ void cz(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Zero; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero == 1);
 #endif
-    if(cpu->regs.f.zero == 1) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.zero == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void cc(intel8080 *cpu, uint16_t addr) {
@@ -788,8 +891,13 @@ void cc(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Carry; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry == 1);
 #endif
-    if(cpu->regs.f.carry == 1) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.carry == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void cpe(intel8080 *cpu, uint16_t addr) {
@@ -797,8 +905,13 @@ void cpe(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Parity Even; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity == 1);
 #endif
-    if(cpu->regs.f.parity == 1) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.parity == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void cm(intel8080 *cpu, uint16_t addr) {
@@ -806,8 +919,13 @@ void cm(intel8080 *cpu, uint16_t addr) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Minus; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 1);
 #endif
-    if(cpu->regs.f.sign == 1) call(cpu, addr);
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(cpu->regs.f.sign == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void lxi(intel8080 *cpu, uint16_t data) {
@@ -974,7 +1092,7 @@ void inr(intel8080 *cpu) {
 #endif
 
     if(reg_ptr) {
-        cpu->regs.f.aux_carry = ((*reg_ptr & 0xF) + 1) > 0xF;
+        modify_aux_carry(*reg_ptr, 1, &cpu->regs, false);
         (*reg_ptr)++;
         modify_flags(*reg_ptr, &cpu->regs, FLAG_ACCESS(cpu));
     }
@@ -991,8 +1109,8 @@ void add(intel8080 *cpu) {
 
     uint16_t t = cpu->regs.a + *reg_ptr;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a & 0xF) + (*reg_ptr & 0xF)) > 0xF;
-
+    modify_carry(cpu->regs.a, *reg_ptr, &cpu->regs, false);
+    modify_aux_carry(cpu->regs.a, *reg_ptr, &cpu->regs, false);
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
@@ -1006,7 +1124,8 @@ void sub(intel8080 *cpu) {
 
     uint16_t t = cpu->regs.a - *reg_ptr;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a & 0xF) < (*reg_ptr & 0xF));
+    modify_carry(cpu->regs.a, *reg_ptr, &cpu->regs, true);
+    modify_aux_carry(cpu->regs.a, *reg_ptr, &cpu->regs, true);
 
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1021,7 +1140,8 @@ void adc(intel8080 *cpu) {
 #endif
 
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a & 0xF) + (*reg_ptr & 0xF) + cpu->regs.f.carry) > 0xF;
+    modify_carry(cpu->regs.a, *reg_ptr + cpu->regs.f.carry, &cpu->regs, false);
+    modify_aux_carry(cpu->regs.a, *reg_ptr + cpu->regs.f.carry, &cpu->regs, false);
 
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1036,7 +1156,8 @@ void sbb(intel8080 *cpu) {
 #endif
 
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a & 0xF) < ((*reg_ptr & 0xF)) + cpu->regs.f.carry);
+    modify_carry(cpu->regs.a, *reg_ptr - cpu->regs.f.carry, &cpu->regs, true);
+    modify_aux_carry(cpu->regs.a, *reg_ptr - cpu->regs.f.carry, &cpu->regs, true);
 
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1049,7 +1170,8 @@ void adi(intel8080 *cpu, uint8_t data) {
     LOG_DEBUG(cpu->regs.pc, "%s: Adding accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.a, data, t);
 #endif
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a & 0xF) + (data & 0xF)) > 0xF;
+    modify_carry(cpu->regs.a, data, &cpu->regs, false);
+    modify_aux_carry(cpu->regs.a, data, &cpu->regs, false);
 
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1062,7 +1184,8 @@ void sui(intel8080 *cpu, uint8_t data) {
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.a, data, t);
 #endif
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = (cpu->regs.a & 0xF) ^ (data & 0xF) ^ (t & 0xF);
+    modify_carry(cpu->regs.a, data, &cpu->regs, true);
+    modify_aux_carry(cpu->regs.a, data, &cpu->regs, true);
     cpu->regs.a = t;
 
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1075,7 +1198,8 @@ void aci(intel8080 *cpu, uint8_t data) {
     LOG_DEBUG(cpu->regs.pc, "%s: Adding carry(%" PRIu8"), accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a, data, t);
 #endif
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a & 0xF) + (data & 0xF) + cpu->regs.f.carry) > 0xF;
+    modify_carry(cpu->regs.a, data + cpu->regs.f.carry, &cpu->regs, false);
+    modify_aux_carry(cpu->regs.a, data + cpu->regs.f.carry, &cpu->regs, false);
 
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1088,6 +1212,7 @@ void sbi(intel8080 *cpu, uint8_t data) {
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting carry(%" PRIu8"), accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a, data, t);
 #endif
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
+    modify_carry(cpu->regs.a, data - cpu->regs.f.carry, &cpu->regs, true);
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
@@ -1180,33 +1305,39 @@ void dcr(intel8080 *cpu) {
     (*reg_ptr)--;
 
     modify_flags(*reg_ptr, regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((*reg_ptr ^ -1 ^ (*reg_ptr+1)) & 0x10) ? 1 : 0;
+    modify_aux_carry(*reg_ptr+1, 1, &cpu->regs, true);
 
     regs->pc += INSTR_SIZE(cpu);
 }
 
 void ana(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
-    uint8_t x = cpu->regs.a & *reg_ptr;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
+    uint8_t x = cpu->regs.a & *reg_ptr;
     LOG_DEBUG(cpu->regs.pc, "%s: Logical AND with Accumulator(0x%02X); Result: 0x%02X", ii.instruction, cpu->regs.a, x);
 #endif
-    cpu->regs.a = x;
+    cpu->regs.f.aux_carry = ((cpu->regs.a | *reg_ptr) & 0x08) != 0;
+
+    cpu->regs.a &= *reg_ptr;
     modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.carry = 0;
+
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void ani(intel8080 *cpu, uint8_t data) {
-    uint8_t x = cpu->regs.a & data;
 #ifdef DEBUG
+    uint8_t x = cpu->regs.a & data;
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Logical AND; Data(0x%02X) & Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
 #endif
-    cpu->regs.a = x;
+    cpu->regs.f.aux_carry = ((cpu->regs.a | data) & 0x08) != 0;
+    cpu->regs.a &= data;
+
     modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.carry = 0;
+
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1234,6 +1365,9 @@ void ori(intel8080 *cpu, uint8_t data) {
 #endif
     cpu->regs.a = x;
     modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.f.carry = 0;
+    cpu->regs.f.aux_carry = 0;
+
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1248,6 +1382,7 @@ void xra(intel8080 *cpu) {
     modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.carry = 0;
     cpu->regs.f.aux_carry = 0;
+
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1259,6 +1394,9 @@ void xri(intel8080 *cpu, uint8_t data) {
 #endif
     cpu->regs.a = x;
     modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.f.carry = 0;
+    cpu->regs.f.aux_carry = 0;
+
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1267,7 +1405,8 @@ void cmp(intel8080 *cpu) {
 
     uint16_t t = cpu->regs.a - *reg_ptr;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a & 0xF) < ((*reg_ptr & 0xF)) + cpu->regs.f.carry);
+    modify_aux_carry(cpu->regs.a, *reg_ptr, &cpu->regs, true);
+    modify_carry(cpu->regs.a, *reg_ptr, &cpu->regs, true);
 
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
@@ -1281,6 +1420,9 @@ void cmp(intel8080 *cpu) {
 void cpi(intel8080 *cpu, uint8_t data) {
     uint16_t t = cpu->regs.a - data;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
+    modify_aux_carry(cpu->regs.a, data, &cpu->regs, true);
+    modify_carry(cpu->regs.a, data, &cpu->regs, true);
+
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Comparing Data(0x%02X) and Accumulator(0x%02X)", ii.instruction, data, cpu->regs.a);
@@ -1338,8 +1480,11 @@ void rar(intel8080* cpu) {
 
 void daa(intel8080 *cpu) {
     uint8_t total = 0;
-    if((cpu->regs.a & 0x0F) > 9 || cpu->regs.f.aux_carry) {
-        total += 6;
+    uint8_t old_carry = cpu->regs.f.carry;
+    uint8_t old_aux_carry = cpu->regs.f.aux_carry;
+
+    if((cpu->regs.a & 0x0F) > 9 || old_aux_carry) {
+        total += 0x06;
     }
 
     if(((cpu->regs.a >> 4) & 0x0F) > 9 || cpu->regs.f.carry) {
@@ -1349,12 +1494,12 @@ void daa(intel8080 *cpu) {
     }
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Adjusting accumulator: 0x%02X", ii.instruction, ~cpu->regs.a);
+    LOG_DEBUG(cpu->regs.pc, "%s: Double Add Total: %" PRIu8, ii.instruction, total);
 #endif
 
     uint8_t result = cpu->regs.a + total;
     modify_flags(result, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = ((cpu->regs.a ^ total ^ result) & 0x10) ? 1 : 0;
+    modify_aux_carry(cpu->regs.a, total, &cpu->regs, false);
     cpu->regs.a += total;
 
     cpu->regs.pc += INSTR_SIZE(cpu);

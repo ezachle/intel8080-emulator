@@ -21,7 +21,7 @@ debug: all
 cpm-verbose: CFLAGS += -O0 -DCPM -DVERBOSE -g
 cpm-verbose: all
 
-cpm: CFLAGS += -DCPM
+cpm: CFLAGS += -DCPM -g -O0
 cpm: all
 
 # Compiles all the .c files in src into .o
