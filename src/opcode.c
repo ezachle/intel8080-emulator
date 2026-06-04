@@ -1485,11 +1485,11 @@ void daa(intel8080 *cpu) {
         total += 0x06;
     }
 
-    if(((cpu->regs.a >> 4) & 0x0F) > 9 || cpu->regs.f.carry) {
+    if(((cpu->regs.a >> 4) & 0x0F) > 9 || 
+       ((cpu->regs.a + total) >> 4 & 0x0F) > 9 || old_carry) {
         total += 0x60;
-    } else {
-        cpu->regs.f.carry = 0;
     }
+
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Double Add Total: %" PRIu8, ii.instruction, total);
@@ -1497,6 +1497,10 @@ void daa(intel8080 *cpu) {
 
     uint8_t result = cpu->regs.a + total;
     modify_flags(result, &cpu->regs, FLAG_ACCESS(cpu));
+
+    if(old_carry) cpu->regs.f.carry = old_carry;
+    else modify_carry(cpu->regs.a, total, &cpu->regs, false);
+
     modify_aux_carry(cpu->regs.a, total, &cpu->regs, false);
     cpu->regs.a += total;
 
@@ -1517,7 +1521,7 @@ void cmc(intel8080 *cpu) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Complementing carry: 0x%02X", ii.instruction, ~cpu->regs.f.carry);
 #endif
-    cpu->regs.f.carry = ~cpu->regs.f.carry;
+    cpu->regs.f.carry = !cpu->regs.f.carry;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
