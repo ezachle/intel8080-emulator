@@ -86,7 +86,7 @@ void destroy_8080(intel8080 *cpu) {
 }
 
 #ifdef CPM
-void handle_cpm(intel8080 *cpu) {
+static bool handle_cpm(intel8080 *cpu) {
     if(cpu->regs.pc == 0x0005) {
         switch(cpu->regs.c) {
             case 2:
@@ -105,9 +105,14 @@ void handle_cpm(intel8080 *cpu) {
                 LOG_WARNING(cpu->regs.pc, "Unimplemneted CP/M Instruciton %" PRIu8, cpu->regs.c);
                 break;
         }
+        ret(cpu);
+        cpu->cycles += 20;
+        return true;
     } else if(cpu->regs.pc == 0x0000) {
         cpu->quit = true;
     }
+
+    return false;
 }
 #endif
 
@@ -137,7 +142,7 @@ void emulate_8080(intel8080 *cpu) {
             memory->data[*pc+2],
             memory->data[*pc+3]);
 #endif
-    handle_cpm(cpu);
+    if(handle_cpm(cpu)) return;
     if(cpu->quit) return;
 #endif
 
