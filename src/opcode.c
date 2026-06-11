@@ -612,8 +612,8 @@ void xthl(intel8080 *cpu) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP(0x%02X) and SP+1(0x%02X)", ii.instruction, cpu->regs.hl, cpu->mem.data[cpu->regs.sp], cpu->mem.data[cpu->regs.sp+1]);
 #endif
-    swap_u8(&cpu->regs.h, &cpu->mem.data[GET_SP(0)]);
-    swap_u8(&cpu->regs.l, &cpu->mem.data[GET_SP(1)]);
+    swap_u8(&cpu->regs.l, &cpu->mem.data[GET_SP(0)]);
+    swap_u8(&cpu->regs.h, &cpu->mem.data[GET_SP(1)]);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 

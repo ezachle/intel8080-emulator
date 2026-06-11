@@ -160,4 +160,4 @@ void hlt(intel8080 *cpu);
 void ei(intel8080 *cpu);
 void di(intel8080 *cpu);
 
-extern const instr_info_t opcode_map[0x100];
+extern instr_info_t opcode_map[0x100];
