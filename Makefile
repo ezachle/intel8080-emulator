@@ -1,37 +1,37 @@
 CC := gcc
 
-# tell compiler where additional header files are
 INCL := include
-CFLAGS := -Werror -I$(INCL) $(shell pkg-config --cflags raylib)
-LDFLAGS := $(shell pkg-config --libs raylib) -lm -lX11
+# maybe -Wall?
+CFLAGS := -Wextra -Werror -I$(INCL)
 
-SRC_DIR := src
-SRC := $(wildcard $(SRC_DIR)/*.c)
-OBJ := $(SRC:.c=.o)
+RAYLIB_CFLAGS := $(shell pkg-config --cflags raylib)
+RAYLIB_LDFLAGS := $(shell pkg-config --libs raylib) -lm -lX11
 
-BUILD_NAME := Intel8080
+# Added specific names to separate main.c and the
+# space invaders main.c
+CPU_SRC := src/intel8080.c src/opcode.c
+CPU_OBJ := $(CPU_SRC:.c=.o)
 
-.PHONY: all debug clean
+INVADERS_SRC := $(wildcard space_invaders/*.c)
+INVADERS_OBJ := $(INVADERS_SRC:.c=.o)
 
-all: $(BUILD_NAME)
+.PHONY: all Intel8080 CPM space-invaders clean
 
-debug: CFLAGS += -O0 -DDEBUG -g
-debug: all
+all: Intel8080
 
-cpm-verbose: CFLAGS += -O0 -DCPM -DVERBOSE -g
-cpm-verbose: all
+CPM: CFLAGS += -DCPM
+CPM: all
 
-cpm: CFLAGS += -DCPM -g -O0
-cpm: all
+# substitue .c to .o
+Intel8080: $(CPU_OBJ)
+	$(CC) $(CFLAGS) src/main.c -o $@ $^
 
-# Compiles all the .c files in src into .o
-$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
-# $< means the first parameter of the recipe
-# $@ means the output
+SpaceInvaders: $(INVADERS_OBJ) $(CPU_OBJ)
+	$(CC) -o $@ $^ $(RAYLIB_LDFLAGS)
+
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_NAME): $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
-
 clean:
-	rm $(BUILD_NAME) $(OBJ)
+	rm -f $(INVADERS_OBJ) $(CPU_OBJ)
+	rm -f Intel8080 SpaceInvaders
