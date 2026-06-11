@@ -160,4 +160,7 @@ void hlt(intel8080 *cpu);
 void ei(intel8080 *cpu);
 void di(intel8080 *cpu);
 
+void in(intel8080 *cpu, uint8_t port);
+void out(intel8080 *cpu, uint8_t port);
+
 extern instr_info_t opcode_map[0x100];

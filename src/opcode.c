@@ -311,8 +311,8 @@ instr_info_t opcode_map[0x100] = {
     [0x3F] = {"CMC", 1, 4, MAKE_FLAG_CARRY, {.f0 = cmc}},
 
     // d8 == port - yields a number froms 0x00 to 0xFF
-    [0xD3] = {"OUT d8", 2, 10, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xDB] = {"IN d8", 2, 10, MAKE_FLAG_NONE,  {.f0 = unimplemented_instr}},
+    [0xD3] = {"OUT d8", 2, 10, MAKE_FLAG_NONE, {.f1 = out}},
+    [0xDB] = {"IN d8", 2, 10, MAKE_FLAG_NONE,  {.f1 = in}},
 
     [0x76] = {"HLT", 1, 7, MAKE_FLAG_NONE, {.f0 = hlt}},
     [0xF3] = {"DI", 1, 4, MAKE_FLAG_NONE, {.f0 = di}},
@@ -1578,4 +1578,22 @@ static void generate_interrupt(intel8080 *cpu, uint8_t opcode) {
 #endif
     cpu->interrupt_pending = true;
     cpu->interrupt_vector = opcode;
+}
+
+void in(intel8080 *cpu, uint8_t port) {
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+#ifdef DEBUG
+    LOG_DEBUG(cpu->regs.pc, "%s: IN port %" PRIu8, ii.instruction, port);
+#endif
+    LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction - IN port %" PRIu8, ii.instruction, port);
+    return;
+}
+
+void out(intel8080 *cpu, uint8_t port) {
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+#ifdef DEBUG
+    LOG_DEBUG(cpu->regs.pc, "%s: OUT port %" PRIu8, ii.instruction, port);
+#endif
+    LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction - OUT port %" PRIu8, ii.instruction, port);
+    return;
 }
