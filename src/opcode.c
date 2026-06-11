@@ -310,7 +310,7 @@ instr_info_t opcode_map[0x100] = {
     [0x2F] = {"CMA", 1, 4, MAKE_FLAG_NONE,  {.f0 = cma}},
     [0x3F] = {"CMC", 1, 4, MAKE_FLAG_CARRY, {.f0 = cmc}},
 
-    // d8 == port
+    // d8 == port - yields a number froms 0x00 to 0xFF
     [0xD3] = {"OUT d8", 2, 10, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
     [0xDB] = {"IN d8", 2, 10, MAKE_FLAG_NONE,  {.f0 = unimplemented_instr}},
 

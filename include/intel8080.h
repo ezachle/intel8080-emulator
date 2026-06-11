@@ -19,7 +19,7 @@ typedef struct {
     memory_t    mem;
     registers_t regs;
     char        rom_name[1024];
-    uint16_t    rom_size;
+    uint64_t    rom_size;
     uint64_t    cycles;
 
     bool        is_halted;
