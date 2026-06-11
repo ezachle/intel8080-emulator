@@ -5,10 +5,16 @@
 void init_memory(memory_t *mem) {
     memset(mem->data, 0, MAX_MEM);
 #ifdef CPM
-    mem->data[0x0000] = 0xC9;
-    mem->data[0x0005] = 0xC9;
-    mem->data[0x0006] = 0x00;
-    mem->data[0x0007] = 0xFE;
+
+    // inject "out 0,a" at 0x0000 (signal to stop the test)
+    mem->data[0x0000] = 0xD3;
+    mem->data[0x0001] = 0x00;
+  
+    // inject "out 1,a" at 0x0005 (signal to output some characters)
+    mem->data[0x0005] = 0xD3;
+    mem->data[0x0006] = 0x01;
+    mem->data[0x0007] = 0xC9;
+  
 #endif
 }
 
@@ -128,6 +134,11 @@ void emulate_8080(intel8080 *cpu) {
     }
 
 #ifdef CPM
+    if(handle_cpm(cpu)) return;
+    if(cpu->quit) {
+        printf("Test Complete\n");
+        return;
+    }
 #ifdef VERBOSE
     fprintf(stderr, "PC: %04X AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X, CYC: %" PRIu64"\t (%02X %02X %02X %02X)\n",
             *pc,
@@ -142,8 +153,6 @@ void emulate_8080(intel8080 *cpu) {
             memory->data[*pc+2],
             memory->data[*pc+3]);
 #endif
-    if(handle_cpm(cpu)) return;
-    if(cpu->quit) return;
 #endif
 
     if(cpu->is_halted)

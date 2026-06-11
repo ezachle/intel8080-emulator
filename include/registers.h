@@ -12,6 +12,7 @@ typedef union {
         uint8_t zero: 1;
         uint8_t sign: 1;
     };
+    uint8_t raw;
 } flags_t;
 
 typedef struct {
