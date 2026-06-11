@@ -2,7 +2,11 @@
 #include "intel8080.h"
 #include "opcode.h"
 
-void init_memory(memory_t *mem) {
+
+void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc) {
+    regs->pc = start_pc;
+    regs->sp = 0x0;
+
     memset(mem->data, 0, MAX_MEM);
 #ifdef CPM
 
@@ -16,12 +20,6 @@ void init_memory(memory_t *mem) {
     mem->data[0x0007] = 0xC9;
   
 #endif
-}
-
-void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc) {
-    regs->pc = start_pc;
-    regs->sp = 0x0;
-    init_memory(mem);
 }
 
 static bool load_rom(intel8080 *cpu, char *rom_name) {
@@ -42,12 +40,7 @@ static bool load_rom(intel8080 *cpu, char *rom_name) {
     }
     rewind(fp);
 
-    uint8_t *mem_ptr = NULL;
-#ifdef CPM
-    mem_ptr = &cpu->mem.data[0x0100];
-#else
-    mem_ptr = &cpu->mem.data[0x0000];
-#endif
+    uint8_t *mem_ptr = &cpu->mem.data[cpu->regs.pc];
     if(!fread(mem_ptr, cpu->rom_size, 1, fp)) {
         LOG_ERROR(cpu->regs.pc, "Failed to read memory from ROM");
         fclose(fp);
@@ -87,11 +80,25 @@ bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
 }
 
 void destroy_8080(intel8080 *cpu) {
-    init_memory(&cpu->mem);
+    reset_memory(&cpu->regs, &cpu->mem, 0);
     cpu->rom = NULL;
 }
 
 #ifdef CPM
+static bool run_test(intel8080 *cpu, char* rom_name) {
+    if(!load_rom(cpu, rom_name)) {
+        LOG_ERROR(cpu->regs.pc, "Failed to load ROM: %s", rom_name);
+        return false;
+    }
+
+    bool rc = init_8080(cpu, rom_name, 0x0100);
+
+    while(!cpu->quit && cpu->regs.pc < 0xFFFF)
+        emulate_8080(cpu);
+
+    return true;
+}
+
 static bool handle_cpm(intel8080 *cpu) {
     if(cpu->regs.pc == 0x0005) {
         switch(cpu->regs.c) {
@@ -121,6 +128,24 @@ static bool handle_cpm(intel8080 *cpu) {
     return false;
 }
 #endif
+
+bool run_cpm_tests(intel8080 *cpu) {
+#ifdef CPM
+    bool rc = run_test(cpu, "cpu_tests/TST8080.COM");
+    if(!rc) return false;
+
+    rc = run_test(cpu, "cpu_tests/CPUTEST.COM");
+    if(!rc) return false;
+
+    rc = run_test(cpu, "cpu_tests/8080PRE.COM");
+    if(!rc) return false;
+
+    rc = run_test(cpu, "cpu_tests/8080EXM.COM");
+    if(!rc) return false;
+#endif
+    return true;
+}
+
 
 void emulate_8080(intel8080 *cpu) {
     memory_t *memory = &cpu->mem;

@@ -1212,7 +1212,6 @@ void aci(intel8080 *cpu, uint8_t data) {
 void sbi(intel8080 *cpu, uint8_t data) {
     uint8_t old_cy = cpu->regs.f.carry;
     // Two's complement
-    //uint16_t t = cpu->regs.a + (~data) + (1 - old_cy); // this works
     uint16_t t = cpu->regs.a - data - old_cy;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);

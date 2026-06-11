@@ -7,9 +7,6 @@ typedef struct {
     uint8_t data[MAX_MEM];
 } memory_t;
 
-void init_memory(memory_t *mem);
-void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc);
-
 typedef struct {
     /*
      *  $0000-$1FFF 8K ROM
@@ -40,3 +37,6 @@ typedef struct {
 bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc);
 void destroy_8080(intel8080 *cpu);
 void emulate_8080(intel8080 *cpu);
+
+void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc);
+bool run_cpm_tests(intel8080 *cpu);
