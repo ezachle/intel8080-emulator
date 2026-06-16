@@ -160,6 +160,11 @@ void hlt(intel8080 *cpu);
 void ei(intel8080 *cpu);
 void di(intel8080 *cpu);
 
+void generate_interrupt(intel8080 *cpu, uint8_t opcode);
+
+void set_in(void (*in_function)(intel8080 *cpu, uint8_t port));
+void set_out(void (*out_function)(intel8080 *cpu, uint8_t port));
+
 void in(intel8080 *cpu, uint8_t port);
 void out(intel8080 *cpu, uint8_t port);
 

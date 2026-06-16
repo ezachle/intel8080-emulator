@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     rc = run_cpm_tests(&cpu);
     return rc;
 #else
-    rc = init_8080(&cpu, argv[1], 0x0000);
+    rc = init_8080(&cpu, argv[1], 0x0000, NULL);
 #endif
     if(!rc) return rc;
     LOG(cpu.regs.pc, "Starting ROM %s", cpu.rom_name);

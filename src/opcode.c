@@ -348,20 +348,6 @@ typedef enum {
 #define OP_DST_REG(cpu)  ((CUR_OP(cpu) & 0x38) >> 3)
 #define OP_SRC_REG(cpu)  (CUR_OP(cpu) & 0x7)
 
-#define PRINT_STATE \
-    fprintf(stderr, "PC: %04X AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X, CYC: %" PRIu64"\t (%02X %02X %02X %02X)\n", \
-    cpu->regs.pc, \
-    cpu->regs.psw, \
-    cpu->regs.bc, \
-    cpu->regs.de, \
-    cpu->regs.hl, \
-    cpu->regs.sp, \
-    cpu->cycles, \
-    cpu->mem.data[cpu->regs.pc], \
-    cpu->mem.data[cpu->regs.pc+1], \
-    cpu->mem.data[cpu->regs.pc+2], \
-    cpu->mem.data[cpu->regs.pc+3]);
-
 typedef enum {
     CARRY = 0,
     UNUSED1 = 1,
@@ -1571,13 +1557,21 @@ void di(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-static void generate_interrupt(intel8080 *cpu, uint8_t opcode) {
+void generate_interrupt(intel8080 *cpu, uint8_t opcode) {
+    if(!cpu->ei) return;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Creating interrupt with opcode %" PRIu8, ii.instruction, opcode);
 #endif
-    cpu->interrupt_pending = true;
     cpu->interrupt_vector = opcode;
+}
+
+void set_in(void (*in_function)(intel8080 *cpu, uint8_t port)) {
+    opcode_map[0xDB].handler.f1 = in_function;
+}
+
+void set_out(void (*out_function)(intel8080 *cpu, uint8_t port)) {
+    opcode_map[0xD3].handler.f1 = out_function;
 }
 
 void in(intel8080 *cpu, uint8_t port) {

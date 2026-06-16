@@ -27,14 +27,14 @@ static bool load_rom(intel8080 *cpu, char *rom_name) {
 
     FILE *fp = fopen(rom_name, "rb");
     if(!fp) {
-        LOG_ERROR(cpu->regs.pc, "Unable to open fp %s\n", rom_name);
+        LOG_ERROR(cpu->regs.pc, "Unable to open file %s\n", rom_name);
         return false;
     }
 
     fseek(fp, 0, SEEK_END);
     cpu->rom_size = ftell(fp);
     if(cpu->rom_size > 0xFFFF) {
-        LOG_ERROR(cpu->regs.pc, "ROM file is greater than 8192 bytes, file: %"PRIu16, cpu->rom_size);
+        LOG_ERROR(cpu->regs.pc, "ROM file is greater than 8192 bytes, file: %"PRIu64, cpu->rom_size);
         fclose(fp);
         return false;
     }
@@ -52,7 +52,7 @@ static bool load_rom(intel8080 *cpu, char *rom_name) {
     return true;
 }
 
-bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
+bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc, void *userdata) {
     reset_memory(&cpu->regs, &cpu->mem, start_pc);
 
     cpu->regs.f.unused1 = 1;
@@ -64,7 +64,6 @@ bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
     cpu->cycles = 0;
     cpu->is_halted = false;
     cpu->ei = false;
-    cpu->interrupt_pending = false;
     cpu->interrupt_vector = 0;
     
     if(!load_rom(cpu, rom_name)) {
@@ -73,8 +72,8 @@ bool init_8080(intel8080 *cpu, char *rom_name, const uint16_t start_pc) {
     }
 
     cpu->quit = false;
-    memset(cpu->io.display, 0, sizeof(cpu->io.display));
-    cpu->io.scale_factor = 2;
+
+    cpu->userdata = userdata;
 
     return true;
 }
@@ -91,7 +90,7 @@ static bool run_test(intel8080 *cpu, char* rom_name) {
         return false;
     }
 
-    bool rc = init_8080(cpu, rom_name, 0x0100);
+    bool rc = init_8080(cpu, rom_name, 0x0100, NULL);
 
     while(!cpu->quit && cpu->regs.pc < 0xFFFF)
         emulate_8080(cpu);
@@ -151,12 +150,14 @@ void emulate_8080(intel8080 *cpu) {
     memory_t *memory = &cpu->mem;
 
     uint16_t *pc = &cpu->regs.pc;
-    if(cpu->ei && cpu->interrupt_pending) {
+    if(cpu->ei && cpu->interrupt_vector) {
         cpu->ei = false;
-        cpu->interrupt_pending = false;
         cpu->is_halted = false;
         *pc = cpu->interrupt_vector;
+        cpu->interrupt_vector = 0;
     }
+    //PRINT_STATE(cpu);
+    //PRINT_FLAGS(cpu);
 
 #ifdef CPM
     if(handle_cpm(cpu)) return;
@@ -224,6 +225,10 @@ void emulate_8080(intel8080 *cpu) {
                 ii.handler.f1(cpu, *(instr+1));
             } else if(ii.op_bytes == 3) {
                 ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
+            }
+
+            if(instr[0] == 0xD3 || instr[0] == 0xDB) {
+                cpu->regs.pc += ii.op_bytes;
             }
         } else {
             cpu->regs.pc += ii.op_bytes;
