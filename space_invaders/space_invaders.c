@@ -38,8 +38,8 @@ static void handle_input(SpaceInvaders *machine) {
             break;
     };
 
-    machine->i8080.in_reg[1] = port1;
-    machine->i8080.in_reg[2] = port2;
+    machine->port1 = port1;
+    machine->port2 = port2;
 }
 
 static void draw_display(SpaceInvaders *machine) {
@@ -51,16 +51,21 @@ static void draw_display(SpaceInvaders *machine) {
     uint8_t  scale   = machine->io.scale_factor;
 
     for(uint16_t i = 0; i < VRAM_SIZE; i++) {
+        // Program sees it as (x,y) = (256,224)
+        // while the rotated CRT    = (224,256)
+        // x runs horizontally from left
+        // y runs vertically from top
         // rows are in 8-bit chunks
         int x = (i % 32) * 8;
         int y = i / 32;
 
         uint8_t byte = vram[i];
 
-        // iterate through each bit
+        // iterate through each bit in the byte
         for(uint8_t bit = 0; bit < 8; bit++) {
-            Color pixel = ((byte >> bit) & 1) ? BLACK : WHITE;
+            Color pixel = ((byte >> bit) & 1) ? WHITE : BLACK;
 
+            // compensate for 90 degree CW CRT
             int src_x = y;
             int src_y = 255 - (x + bit);
 
@@ -85,15 +90,19 @@ void space_invaders_in(intel8080 *i8080, uint8_t port) {
  */
     SpaceInvaders *machine = (SpaceInvaders*)i8080->userdata;
     switch(port) {
+        case 0x01:
+            i8080->regs.a = machine->port1;
+            break;
+        case 0x02:
+            i8080->regs.a = machine->port2;
+            break;
         case 0x03:
             // dedicated shift HW to position a 8-bit pixel image into a 16-bit word
             // for the desired pixel position on the screen
             uint16_t value = ((machine->shift1 << 8) | machine->shift0);
             i8080->regs.a = ((value >> (8 - machine->shift_offset) & 0xFF));
             break;
-        case 0x00:
-        case 0x01:
-        case 0x02:
+        case 0x00: // unused
         default:
             break;
     }
@@ -113,11 +122,11 @@ void space_invaders_out(intel8080 *i8080, uint8_t port) {
         case 0x02:
             machine->shift_offset = i8080->regs.a & 0x7;
             break;
-        case 0x03:
         case 0x04:
             machine->shift0 = machine->shift1;
             machine->shift1 = i8080->regs.a;
             break;
+        case 0x03:
         case 0x05:
         case 0x06:
         default:
@@ -181,7 +190,7 @@ int main() {
         }
         generate_interrupt(i8080, 0xD7); // RST 2
 
-        ClearBackground(BLACK);
+        ClearBackground(WHITE);
         BeginDrawing();
         draw_display(&machine);
         EndDrawing();
