@@ -148,14 +148,6 @@ bool run_cpm_tests(intel8080 *cpu) {
 
 void emulate_8080(intel8080 *cpu) {
     memory_t *memory = &cpu->mem;
-
-    uint16_t *pc = &cpu->regs.pc;
-    if(cpu->ei && cpu->interrupt_vector) {
-        cpu->ei = false;
-        cpu->is_halted = false;
-        *pc = cpu->interrupt_vector;
-        cpu->interrupt_vector = 0;
-    }
     //PRINT_STATE(cpu);
     //PRINT_FLAGS(cpu);
 
@@ -181,10 +173,19 @@ void emulate_8080(intel8080 *cpu) {
 #endif
 #endif
 
+    uint16_t *pc = &cpu->regs.pc;
+    uint8_t *instr = &memory->data[*pc];
+
+    if(cpu->ei && cpu->interrupt_vector) {
+        cpu->ei = false;
+        cpu->is_halted = false;
+        *instr = cpu->interrupt_vector;
+        cpu->interrupt_vector = 0;
+    }
+
     if(cpu->is_halted)
         return;
 
-    uint8_t *instr = &memory->data[*pc];
     const instr_info_t ii = opcode_map[instr[0]];
     if(ii.op_bytes <= 0) {
         LOG_WARNING(cpu->regs.pc, "Unimplemented opcode: %02X", instr[0]);
