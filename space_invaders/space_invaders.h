@@ -15,6 +15,9 @@ typedef struct {
     uint8_t shift1;         // MSB
     uint8_t shift_offset;   // Offset for machines shift hardware
 
+    uint8_t port1;
+    uint8_t port2;
+
     intel8080 i8080;
 } SpaceInvaders;
 
