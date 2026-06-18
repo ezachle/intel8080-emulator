@@ -1296,7 +1296,7 @@ void dcr(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Decrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
 #endif
 
-    cpu->regs.f.aux_carry = ((*reg_ptr & 0x0F) == 0);
+    cpu->regs.f.aux_carry = ((*reg_ptr & 0x0F) != 0);
     (*reg_ptr)--;
 
     modify_flags(*reg_ptr, regs, FLAG_ACCESS(cpu));
