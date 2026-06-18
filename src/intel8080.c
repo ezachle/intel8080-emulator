@@ -2,7 +2,6 @@
 #include "intel8080.h"
 #include "opcode.h"
 
-
 void reset_memory(registers_t *regs, memory_t *mem, const uint16_t start_pc) {
     regs->pc = start_pc;
     regs->sp = 0x0;
@@ -179,8 +178,10 @@ void emulate_8080(intel8080 *cpu) {
     if(cpu->ei && cpu->interrupt_vector) {
         cpu->ei = false;
         cpu->is_halted = false;
-        *instr = cpu->interrupt_vector;
+        uint8_t v = cpu->interrupt_vector;
         cpu->interrupt_vector = 0;
+        rst(cpu, v & 0x38);
+        return;
     }
 
     if(cpu->is_halted)

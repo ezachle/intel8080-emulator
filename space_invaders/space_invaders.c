@@ -190,10 +190,10 @@ int main() {
         }
         generate_interrupt(i8080, 0xD7); // RST 2
 
+BeginDrawing();
         ClearBackground(WHITE);
-        BeginDrawing();
         draw_display(&machine);
-        EndDrawing();
+EndDrawing();
 
         double elapsed = GetTime() - last_frame;
         if(elapsed > FRAME_TIME) {
@@ -202,6 +202,7 @@ int main() {
         i8080->cycles = 0;
     }
 
+    CloseWindow();
     destroy_8080(i8080);
 
     return EXIT_SUCCESS;

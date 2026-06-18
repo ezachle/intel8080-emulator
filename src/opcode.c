@@ -27,15 +27,15 @@ instr_info_t opcode_map[0x100] = {
     [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
     [0xF9] = {"SPHL", 1, 5, MAKE_FLAG_NONE, {.f0 = sphl}},
 
-    [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
-    [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
-    [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
-    [0xF7] = {"RST 6", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xF7] = {"RST 6", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
 
-    [0xCF] = {"RST 1", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
-    [0xDF] = {"RST 3", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
-    [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
-    [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = rst}},
+    [0xCF] = {"RST 1", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xDF] = {"RST 3", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
 
     [0xC0] = {"RNZ", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
     [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnc}},
@@ -703,12 +703,12 @@ void jp(intel8080 *cpu, uint16_t addr) {
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void rst(intel8080 *cpu) {
+void rst(intel8080 *cpu, uint8_t instr) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: RST %" PRIu8, ii.instruction, (CUR_OP(cpu) & 0x38) >> 3);
 #endif
-    call(cpu, CUR_OP(cpu) & 0x38);
+    call(cpu, instr);
 }
 
 void cnz(intel8080 *cpu, uint16_t addr) {
