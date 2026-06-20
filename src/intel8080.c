@@ -178,65 +178,63 @@ void emulate_8080(intel8080 *cpu) {
     if(cpu->ei && cpu->interrupt_vector) {
         cpu->ei = false;
         cpu->is_halted = false;
-        uint8_t v = cpu->interrupt_vector;
+        const instr_info_t ii = opcode_map[cpu->interrupt_vector];
         cpu->interrupt_vector = 0;
-        rst(cpu, v & 0x38);
-        return;
-    }
-
-    if(cpu->is_halted)
-        return;
-
-    const instr_info_t ii = opcode_map[instr[0]];
-    if(ii.op_bytes <= 0) {
-        LOG_WARNING(cpu->regs.pc, "Unimplemented opcode: %02X", instr[0]);
-        *pc += 1;
+        ii.handler.f0(cpu);
     } else {
-#ifdef DEBUG
-        fprintf(stderr, "%-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
-                ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
-        fprintf(stderr, "  Registers:\n");
-        fprintf(stderr, "   sp: 0x%04X\n", cpu->regs.sp);
-        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.sp, cpu->mem.data[cpu->regs.sp]);
-        fprintf(stderr, "   pc: 0x%04X\n", cpu->regs.pc);
-        fprintf(stderr, "   af: 0x%04X\n", cpu->regs.psw);
-        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.psw, cpu->mem.data[cpu->regs.psw]);
-        fprintf(stderr, "    Flags:\n");
-        fprintf(stderr, "     carry: %" PRIu8"\n", cpu->regs.f.carry);
-        fprintf(stderr, "     parity: %" PRIu8"\n", cpu->regs.f.parity);
-        fprintf(stderr, "     aux_carry: %" PRIu8"\n", cpu->regs.f.aux_carry);
-        fprintf(stderr, "     zero: %" PRIu8"\n", cpu->regs.f.zero);
-        fprintf(stderr, "     sign: %" PRIu8"\n", cpu->regs.f.sign);
-        fprintf(stderr, "   bc: 0x%04X\n", cpu->regs.bc);
-        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.bc, cpu->mem.data[cpu->regs.bc]);
-        fprintf(stderr, "   de: 0x%04X\n", cpu->regs.de);
-        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.de, cpu->mem.data[cpu->regs.de]);
-        fprintf(stderr, "   hl: 0x%04X\n", cpu->regs.hl);
-        fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.hl, cpu->mem.data[cpu->regs.hl]);
-        fprintf(stderr, "  Data:");
-        for(uint8_t i = 0; i < ii.op_bytes; i++) {
-            fprintf(stderr, " %02X", *(instr+i));
-        }
-        fprintf(stderr, "\nTotal Cycles: %" PRIu64, cpu->cycles);
-        fprintf(stderr, "\n");
-#endif
-        if(ii.handler.f0 != NULL) {
-            if(ii.op_bytes == 1) {
-                ii.handler.f0(cpu);
-            } else if(ii.op_bytes == 2) {
-                ii.handler.f1(cpu, *(instr+1));
-            } else if(ii.op_bytes == 3) {
-                ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
-            }
+        if(cpu->is_halted)
+            return;
 
-            if(instr[0] == 0xD3 || instr[0] == 0xDB) {
+        const instr_info_t ii = opcode_map[instr[0]];
+        if(ii.op_bytes <= 0) {
+            LOG_WARNING(cpu->regs.pc, "Unimplemented opcode: %02X", instr[0]);
+            *pc += 1;
+        } else {
+#ifdef DEBUG
+            fprintf(stderr, "%-12s(0x%02X)\tBytes: %" PRIu8"\tCycles: %" PRIu8"\tPC: %04X\n",
+                    ii.instruction, *instr, ii.op_bytes, ii.cycles, *pc);
+            fprintf(stderr, "  Registers:\n");
+            fprintf(stderr, "   sp: 0x%04X\n", cpu->regs.sp);
+            fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.sp, cpu->mem.data[cpu->regs.sp]);
+            fprintf(stderr, "   pc: 0x%04X\n", cpu->regs.pc);
+            fprintf(stderr, "   af: 0x%04X\n", cpu->regs.psw);
+            fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.psw, cpu->mem.data[cpu->regs.psw]);
+            fprintf(stderr, "    Flags:\n");
+            fprintf(stderr, "     carry: %" PRIu8"\n", cpu->regs.f.carry);
+            fprintf(stderr, "     parity: %" PRIu8"\n", cpu->regs.f.parity);
+            fprintf(stderr, "     aux_carry: %" PRIu8"\n", cpu->regs.f.aux_carry);
+            fprintf(stderr, "     zero: %" PRIu8"\n", cpu->regs.f.zero);
+            fprintf(stderr, "     sign: %" PRIu8"\n", cpu->regs.f.sign);
+            fprintf(stderr, "   bc: 0x%04X\n", cpu->regs.bc);
+            fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.bc, cpu->mem.data[cpu->regs.bc]);
+            fprintf(stderr, "   de: 0x%04X\n", cpu->regs.de);
+            fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.de, cpu->mem.data[cpu->regs.de]);
+            fprintf(stderr, "   hl: 0x%04X\n", cpu->regs.hl);
+            fprintf(stderr, "    memory[0x%04X](if applicable): 0x%02X\n", cpu->regs.hl, cpu->mem.data[cpu->regs.hl]);
+            fprintf(stderr, "  Data:");
+            for(uint8_t i = 0; i < ii.op_bytes; i++) {
+                fprintf(stderr, " %02X", *(instr+i));
+            }
+            fprintf(stderr, "\nTotal Cycles: %" PRIu64, cpu->cycles);
+            fprintf(stderr, "\n");
+#endif
+            if(ii.handler.f0 != NULL) {
+                if(ii.op_bytes == 1) {
+                    ii.handler.f0(cpu);
+                } else if(ii.op_bytes == 2) {
+                    ii.handler.f1(cpu, *(instr+1));
+                } else if(ii.op_bytes == 3) {
+                    ii.handler.f2(cpu, (*(instr+2) << 8) | *(instr+1));
+                }
+
+                if(instr[0] == 0xD3 || instr[0] == 0xDB) {
+                    cpu->regs.pc += ii.op_bytes;
+                }
+            } else {
                 cpu->regs.pc += ii.op_bytes;
             }
-        } else {
-            cpu->regs.pc += ii.op_bytes;
-        }
 
-        cpu->cycles += ii.cycles;
+            cpu->cycles += ii.cycles;
+        }
     }
 }
-

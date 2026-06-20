@@ -27,15 +27,15 @@ instr_info_t opcode_map[0x100] = {
     [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
     [0xF9] = {"SPHL", 1, 5, MAKE_FLAG_NONE, {.f0 = sphl}},
 
-    [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xF7] = {"RST 6", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = rst0}},
+    [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = rst2}},
+    [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = rst4}},
+    [0xF7] = {"RST 6", 1, 11, MAKE_FLAG_NONE, {.f0 = rst6}},
 
-    [0xCF] = {"RST 1", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xDF] = {"RST 3", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
-    [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = unimplemented_instr}},
+    [0xCF] = {"RST 1", 1, 11, MAKE_FLAG_NONE, {.f0 = rst1}},
+    [0xDF] = {"RST 3", 1, 11, MAKE_FLAG_NONE, {.f0 = rst3}},
+    [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = rst5}},
+    [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = rst7}},
 
     [0xC0] = {"RNZ", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
     [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnc}},
@@ -481,6 +481,15 @@ void unimplemented_instr(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
+static void push_pc(intel8080 *cpu) {
+    cpu->regs.pc += INSTR_SIZE(cpu);
+
+    cpu->regs.sp -= 2;
+    cpu->mem.data[GET_SP(0)] = cpu->regs.pc & 0xFF;
+    cpu->mem.data[GET_SP(1)] = (cpu->regs.pc >> 8) & 0xFF;
+}
+
+
 void mov(intel8080 *cpu) {
     registers reg_src = OP_SRC_REG(cpu);
     registers reg_dst = OP_DST_REG(cpu);
@@ -709,6 +718,38 @@ void rst(intel8080 *cpu, uint8_t instr) {
     LOG_DEBUG(cpu->regs.pc, "%s: RST %" PRIu8, ii.instruction, (CUR_OP(cpu) & 0x38) >> 3);
 #endif
     call(cpu, instr);
+}
+
+void rst0(intel8080 *cpu) {
+    call(cpu, 0xC7 & 0x38);
+}
+
+void rst1(intel8080 *cpu) {
+    call(cpu, 0xCF & 0x38);
+}
+
+void rst2(intel8080 *cpu) {
+    call(cpu, 0xD7 & 0x38);
+}
+
+void rst3(intel8080 *cpu) {
+    call(cpu, 0xDF & 0x38);
+}
+
+void rst4(intel8080 *cpu) {
+    call(cpu, 0xE7 & 0x38);
+}
+
+void rst5(intel8080 *cpu) {
+    call(cpu, 0xEF & 0x38);
+}
+
+void rst6(intel8080 *cpu) {
+    call(cpu, 0xF7 & 0x38);
+}
+
+void rst7(intel8080 *cpu) {
+    call(cpu, 0xFF & 0x38);
 }
 
 void cnz(intel8080 *cpu, uint16_t addr) {
@@ -1016,11 +1057,7 @@ void call(intel8080 *cpu, uint16_t data) {
     const uint16_t old_pc = cpu->regs.pc;
     LOG_DEBUG(cpu->regs.pc, "%s: Calling method at address 0x%04X", ii.instruction, data);
 #endif
-    cpu->regs.pc += INSTR_SIZE(cpu);
-
-    cpu->regs.sp -= 2;
-    cpu->mem.data[GET_SP(0)] = cpu->regs.pc & 0xFF;
-    cpu->mem.data[GET_SP(1)] = (cpu->regs.pc >> 8) & 0xFF;
+    push_pc(cpu);
 #ifdef DEBUG
     LOG_DEBUG(old_pc, "%s: Pushing PC(0x%04X) at SP 0x%02X", ii.instruction, cpu->regs.pc, GET_SP(-1));
 #endif
