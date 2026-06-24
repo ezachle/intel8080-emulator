@@ -151,11 +151,7 @@ void emulate_8080(intel8080 *cpu) {
     //PRINT_FLAGS(cpu);
 
 #ifdef CPM
-    if(handle_cpm(cpu)) return;
-    if(cpu->quit) {
-        printf("Test Complete\n");
-        return;
-    }
+    if(handle_cpm(cpu) || cpu->quit) return;
 #ifdef VERBOSE
     fprintf(stderr, "PC: %04X AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X, CYC: %" PRIu64"\t (%02X %02X %02X %02X)\n",
             *pc,

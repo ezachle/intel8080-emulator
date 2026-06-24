@@ -397,13 +397,13 @@ static void modify_flags(uint8_t value, registers_t *regs, const uint8_t flag_ac
     }
 
     if(HAS_ACCESS(flag_access, ZERO)) {
-        regs->f.zero = ((uint8_t)value == 0) ? 1 : 0;
+        regs->f.zero = (value == 0) ? 1 : 0;
     }
 
     // 0 == Even Parity
     // 1 == Odd Parity
     if(HAS_ACCESS(flag_access, PARITY)) {
-        uint8_t x = (uint8_t)value;
+        uint8_t x = value;
         x ^= (x >> 4);
         x ^= (x >> 2);
         x ^= (x >> 1);
@@ -481,12 +481,20 @@ void unimplemented_instr(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
+static void write_byte(intel8080 *cpu, uint16_t addr, uint8_t data) {
+    cpu->mem.data[addr] = data;
+}
+
+static uint8_t get_byte(intel8080 *cpu, uint16_t addr) {
+    return cpu->mem.data[addr];
+}
+
 static void push_pc(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 
     cpu->regs.sp -= 2;
-    cpu->mem.data[GET_SP(0)] = cpu->regs.pc & 0xFF;
-    cpu->mem.data[GET_SP(1)] = (cpu->regs.pc >> 8) & 0xFF;
+    write_byte(cpu, GET_SP(0), (cpu->regs.pc & 0xFF));
+    write_byte(cpu, GET_SP(1), ((cpu->regs.pc >> 8) & 0xFF));
 }
 
 
@@ -524,16 +532,16 @@ void sta(intel8080 *cpu, uint16_t addr) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Loading register A(0x%02X) into memory address 0x%04X", ii.instruction, cpu->regs.a, addr);
 #endif
-    cpu->mem.data[addr] = cpu->regs.a;
+    write_byte(cpu, addr, cpu->regs.a);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void lda(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying data from memory address 0x%04X(0x%02X) into the accumulator", ii.instruction, addr, cpu->mem.data[addr]);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying data from memory address 0x%04X(0x%02X) into the accumulator", ii.instruction, addr, get_byte(cpu, addr));
 #endif
-    cpu->regs.a = cpu->mem.data[addr];
+    cpu->regs.a = get_byte(cpu, addr);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -547,10 +555,10 @@ void ldax(intel8080 *cpu) {
 
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Loading accumulator with value from the memory address 0x%02X(0x%02X)", ii.instruction, *reg_ptr, cpu->mem.data[*reg_ptr]);
+    LOG_DEBUG(cpu->regs.pc, "%s: Loading accumulator with value from the memory address 0x%02X(0x%02X)", ii.instruction, *reg_ptr, get_byte(cpu, *reg_ptr));
 #endif
 
-    cpu->regs.a = cpu->mem.data[*reg_ptr];
+    cpu->regs.a = get_byte(cpu, *reg_ptr);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -566,19 +574,18 @@ void stax(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Storing register A(0x%02X) into address 0x%04X", ii.instruction, cpu->regs.a, *reg_ptr);
 #endif
 
-    cpu->mem.data[*reg_ptr] = cpu->regs.a;
+    write_byte(cpu, *reg_ptr, cpu->regs.a);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void lhld(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Setting L to data at address 0x%04X(0x%02X)", ii.instruction, addr, cpu->mem.data[addr]);
-    LOG_DEBUG(cpu->regs.pc, "%s: Setting H to data at address 0x%04X(0x%02X)", ii.instruction, addr+1, cpu->mem.data[addr+1]);
-
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting L to data at address 0x%04X(0x%02X)", ii.instruction, addr, get_byte(cpu, addr));
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting H to data at address 0x%04X(0x%02X)", ii.instruction, addr+1, get_byte(cpu, addr+1));
 #endif
-    cpu->regs.l = cpu->mem.data[addr];
-    cpu->regs.h = cpu->mem.data[addr+1];
+    cpu->regs.l = get_byte(cpu, addr);
+    cpu->regs.h = get_byte(cpu, addr+1);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -588,8 +595,8 @@ void shld(intel8080 *cpu, uint16_t addr) {
     LOG_DEBUG(cpu->regs.pc, "%s: Copying L(0x%02X) to address 0x%04X", ii.instruction, cpu->regs.l, addr);
     LOG_DEBUG(cpu->regs.pc, "%s: Copying H(0x%02X) to address 0x%04X", ii.instruction, cpu->regs.h, addr+1);
 #endif
-    cpu->mem.data[addr] = cpu->regs.l;
-    cpu->mem.data[addr+1] = cpu->regs.h;
+    write_byte(cpu, addr, cpu->regs.l);
+    write_byte(cpu, addr+1, cpu->regs.h);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -605,7 +612,7 @@ void xchg(intel8080 *cpu) {
 void xthl(intel8080 *cpu) {
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP(0x%02X) and SP+1(0x%02X)", ii.instruction, cpu->regs.hl, cpu->mem.data[cpu->regs.sp], cpu->mem.data[cpu->regs.sp+1]);
+    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP(0x%02X) and SP+1(0x%02X)", ii.instruction, cpu->regs.hl, get_byte(cpu, cpu->regs.sp), get_byte(cpu, cpu->regs.sp+1);
 #endif
     swap_u8(&cpu->regs.l, &cpu->mem.data[GET_SP(0)]);
     swap_u8(&cpu->regs.h, &cpu->mem.data[GET_SP(1)]);
@@ -995,8 +1002,8 @@ void push_register(intel8080 *cpu) {
 #endif
 
     cpu->regs.sp -= 2;
-    cpu->mem.data[GET_SP(0)] = (*reg_ptr >> 0) & 0xFF;
-    cpu->mem.data[GET_SP(1)] = (*reg_ptr >> 8) & 0xFF;
+    write_byte(cpu, GET_SP(0), (*reg_ptr >> 0) & 0xFF);
+    write_byte(cpu, GET_SP(1), (*reg_ptr >> 8) & 0xFF);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1025,8 +1032,7 @@ void pop_register(intel8080 *cpu) {
             break;
     }
 
-    *reg_ptr = cpu->mem.data[GET_SP(0)] |
-               (cpu->mem.data[GET_SP(1)] << 8);
+    *reg_ptr = get_byte(cpu, GET_SP(0)) | (get_byte(cpu, GET_SP(1)) << 8);
     SET_UNUSED(cpu->regs.f)
 
 #ifdef DEBUG
@@ -1042,8 +1048,7 @@ void ret(intel8080 *cpu) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     uint16_t old_pc = cpu->regs.pc;
 #endif
-    cpu->regs.pc = cpu->mem.data[GET_SP(0)] |
-                   (cpu->mem.data[GET_SP(1)] << 8);
+    cpu->regs.pc = get_byte(cpu, GET_SP(0)) | (get_byte(cpu, GET_SP(1)) << 8);
                     
     cpu->regs.sp += 2;
 #ifdef DEBUG

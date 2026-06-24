@@ -100,7 +100,7 @@ void space_invaders_in(intel8080 *i8080, uint8_t port) {
             // dedicated shift HW to position a 8-bit pixel image into a 16-bit word
             // for the desired pixel position on the screen
             uint16_t value = ((machine->shift1 << 8) | machine->shift0);
-            i8080->regs.a = ((value >> (8 - machine->shift_offset) & 0xFF));
+            i8080->regs.a = ((value >> (8 - machine->shift_offset)) & 0xFF);
             break;
         case 0x00: // unused
         default:
@@ -196,8 +196,8 @@ BeginDrawing();
 EndDrawing();
 
         double elapsed = GetTime() - last_frame;
-        if(elapsed > FRAME_TIME) {
-            WaitTime(elapsed);
+        if(elapsed < FRAME_TIME) {
+            WaitTime(FRAME_TIME - elapsed);
         }
         i8080->cycles = 0;
     }
