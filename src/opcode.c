@@ -391,7 +391,7 @@ static bool aux_carry(uint8_t a, uint8_t b, uint8_t cy) {
     return ((a ^ b ^ res) & 0x10) != 0;
 }
 
-static void modify_flags(uint16_t value, registers_t *regs, const uint8_t flag_access) {
+static void modify_flags(uint8_t value, registers_t *regs, const uint8_t flag_access) {
     if(HAS_ACCESS(flag_access, SIGN)) {
         regs->f.sign = (value & (1 << SIGN)) ? 1 : 0;
     }
@@ -1129,7 +1129,7 @@ void add(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to accumulator(0x%02X); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.a + *reg_ptr);
 #endif
 
-    uint16_t t = cpu->regs.a + *reg_ptr;
+    uint8_t t = cpu->regs.a + *reg_ptr;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.carry = carry(cpu->regs.a, *reg_ptr, 0);
     cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, *reg_ptr, 0);
@@ -1144,7 +1144,7 @@ void sub(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting 0x%02X to accumulator(0x%02X); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.a - *reg_ptr);
 #endif
 
-    uint16_t t = cpu->regs.a - *reg_ptr;
+    uint8_t t = cpu->regs.a - *reg_ptr;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.carry = !carry(cpu->regs.a, ~(*reg_ptr), 1);
     cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, ~(*reg_ptr), 1);
@@ -1156,7 +1156,7 @@ void sub(intel8080 *cpu) {
 void adc(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
     uint8_t old_cy = cpu->regs.f.carry;
-    uint16_t t = cpu->regs.a + *reg_ptr + old_cy;
+    uint8_t t = cpu->regs.a + *reg_ptr + old_cy;
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to accumulator(0x%02X) + carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
@@ -1174,7 +1174,7 @@ void adc(intel8080 *cpu) {
 void sbb(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
     uint8_t old_cy = cpu->regs.f.carry;
-    uint16_t t = cpu->regs.a - *reg_ptr - old_cy;
+    uint8_t t = cpu->regs.a - *reg_ptr - old_cy;
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting 0x%02X to accumulator(0x%02X) - carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
@@ -1189,7 +1189,7 @@ void sbb(intel8080 *cpu) {
 }
 
 void adi(intel8080 *cpu, uint8_t data) {
-    uint16_t t = cpu->regs.a + data;
+    uint8_t t = cpu->regs.a + data;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Adding accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.a, data, t);
@@ -1203,7 +1203,7 @@ void adi(intel8080 *cpu, uint8_t data) {
 }
 
 void sui(intel8080 *cpu, uint8_t data) {
-    uint16_t t = (uint16_t)cpu->regs.a - data;
+    uint8_t t = (uint16_t)cpu->regs.a - data;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.a, data, t);
@@ -1219,14 +1219,14 @@ void sui(intel8080 *cpu, uint8_t data) {
 
 void aci(intel8080 *cpu, uint8_t data) {
     uint8_t old_cy = cpu->regs.f.carry;
-    uint16_t t = cpu->regs.a + data + old_cy;
+    uint8_t t = cpu->regs.a + data + old_cy;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Adding carry(%" PRIu8"), accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a, data, t);
 #endif
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, data, old_cy);
-    cpu->regs.f.carry = t > 0xFF;
+    cpu->regs.f.carry = carry(cpu->regs.a, data, old_cy);
 
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1235,7 +1235,7 @@ void aci(intel8080 *cpu, uint8_t data) {
 void sbi(intel8080 *cpu, uint8_t data) {
     uint8_t old_cy = cpu->regs.f.carry;
     // Two's complement
-    uint16_t t = cpu->regs.a - data - old_cy;
+    uint8_t t = cpu->regs.a - data - old_cy;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Subtracting carry(%" PRIu8"), accumulator(0x%02X) and 0x%02X; Result: 0x%02X", ii.instruction, cpu->regs.f.carry, cpu->regs.a, data, t);
@@ -1434,7 +1434,7 @@ void xri(intel8080 *cpu, uint8_t data) {
 void cmp(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
 
-    uint16_t t = cpu->regs.a - *reg_ptr;
+    uint8_t t = cpu->regs.a - *reg_ptr;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, ~(*reg_ptr), 1);
     cpu->regs.f.carry = !carry(cpu->regs.a, ~(*reg_ptr), 1);
@@ -1449,7 +1449,7 @@ void cmp(intel8080 *cpu) {
 }
 
 void cpi(intel8080 *cpu, uint8_t data) {
-    uint16_t t = cpu->regs.a - data;
+    uint8_t t = cpu->regs.a - data;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, ~data, 1);
     cpu->regs.f.carry = !carry(cpu->regs.a, ~data, 1);
