@@ -6,6 +6,4 @@
 #include <memory.h>
 #include <stdbool.h>
 
-#define SCREEN_WIDTH    256
-#define SCREEN_HEIGHT   224
 #define MAX_MEM (1024 * 64)

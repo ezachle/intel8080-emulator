@@ -42,13 +42,16 @@ static void handle_input(SpaceInvaders *machine) {
     machine->port2 = port2;
 }
 
-static void draw_display(SpaceInvaders *machine) {
+static void update_display(SpaceInvaders *machine) {
     /*
      * Screen was physically rotated counter-CW. (0,0) instead started
      * on the bottom left.
      */
+    Color *fb      = &machine->io.frame_buffer[0];
     uint8_t *vram    = &machine->i8080.mem.data[VRAM_START]; // VRAM start 0x2400 - 0x3FFF
     uint8_t  scale   = machine->io.scale_factor;
+
+    memset(fb, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
 
     for(uint16_t i = 0; i < VRAM_SIZE; i++) {
         // Program sees it as (x,y) = (256,224)
@@ -56,27 +59,22 @@ static void draw_display(SpaceInvaders *machine) {
         // x runs horizontally from left
         // y runs vertically from top
         // rows are in 8-bit chunks
-        int x = (i % 32) * 8;
-        int y = i / 32;
-
         uint8_t byte = vram[i];
 
         // iterate through each bit in the byte
         for(uint8_t bit = 0; bit < 8; bit++) {
+            int x = (i % 32) * 8 + bit;
+            int y = i / 32;
+
             Color pixel = ((byte >> bit) & 1) ? WHITE : BLACK;
 
-            // compensate for 90 degree CW CRT
-            int src_x = y;
-            int src_y = 255 - (x + bit);
-
-            DrawRectangle(
-                src_x * scale,
-                src_y * scale,
-                scale,
-                scale,
-                pixel);
+            int screen_x = y;
+            int screen_y = 255 - x;
+            fb[screen_x + screen_y * SCREEN_WIDTH] = pixel;
         }
     }
+
+    UpdateTexture(machine->texture, fb);
 }
 
 void space_invaders_in(intel8080 *i8080, uint8_t port) {
@@ -139,13 +137,19 @@ static bool init_space_invaders(SpaceInvaders *machine) {
         return false;
     }
 
-    memset(machine->io.display, 0, sizeof(machine->io.display));
+    memset(machine->io.frame_buffer, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
     machine->io.scale_factor = 3;
-    
+
     set_in(space_invaders_in);
     set_out(space_invaders_out);
 
     return true;
+}
+
+static void destroy_space_invaders(SpaceInvaders *machine) {
+    destroy_8080(&machine->i8080);
+    UnloadTexture(machine->texture);
+    memset(machine->io.frame_buffer, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
 }
 
 int main() {
@@ -156,8 +160,12 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    InitWindow(SCREEN_HEIGHT * machine.io.scale_factor, SCREEN_WIDTH * machine.io.scale_factor, "Space Invaders");
+    InitWindow(SCREEN_WIDTH * machine.io.scale_factor, SCREEN_HEIGHT * machine.io.scale_factor, "Space Invaders");
     SetTargetFPS(FPS);
+
+    Image blank = GenImageColor(SCREEN_WIDTH, SCREEN_HEIGHT, BLACK);
+    machine.texture = LoadTextureFromImage(blank);
+    UnloadImage(blank);
 
     double last_frame = GetTime();
 
@@ -190,9 +198,11 @@ int main() {
         }
         generate_interrupt(i8080, 0xD7); // RST 2
 
+        update_display(&machine);
+
 BeginDrawing();
-        ClearBackground(WHITE);
-        draw_display(&machine);
+        ClearBackground(BLACK);
+        DrawTextureEx(machine.texture, (Vector2){0,0}, 0, machine.io.scale_factor, WHITE);
 EndDrawing();
 
         double elapsed = GetTime() - last_frame;
@@ -202,8 +212,8 @@ EndDrawing();
         i8080->cycles = 0;
     }
 
+    destroy_space_invaders(&machine);
     CloseWindow();
-    destroy_8080(i8080);
 
     return EXIT_SUCCESS;
 }

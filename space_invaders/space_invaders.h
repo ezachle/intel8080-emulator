@@ -4,10 +4,12 @@
 #define FPS (60)
 #define FRAME_TIME (1/FPS)
 #define INSTR_PER_FRAME (CPU_MHZ / FPS)
+#define SCREEN_WIDTH    224
+#define SCREEN_HEIGHT   256
 
 typedef struct {
     struct {
-        Color       display[SCREEN_WIDTH*SCREEN_HEIGHT];
+        Color       frame_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
         uint8_t     scale_factor;
     } io;
 
@@ -18,6 +20,7 @@ typedef struct {
     uint8_t port1;
     uint8_t port2;
 
+    Texture2D texture;
     intel8080 i8080;
 } SpaceInvaders;
 
