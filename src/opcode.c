@@ -15,18 +15,10 @@ instr_info_t opcode_map[0x100] = {
     [0x28] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
     [0x38] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
 
-    [0xCB] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
-    [0xC3] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
-    [0xC9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
-    [0xD9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
-    [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
-    [0xDD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
-    [0xED] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
-    [0xFD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
-
     [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
     [0xF9] = {"SPHL", 1, 5, MAKE_FLAG_NONE, {.f0 = sphl}},
 
+    // ==== Resets ====
     [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = rst0}},
     [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = rst2}},
     [0xE7] = {"RST 4", 1, 11, MAKE_FLAG_NONE, {.f0 = rst4}},
@@ -37,45 +29,42 @@ instr_info_t opcode_map[0x100] = {
     [0xEF] = {"RST 5", 1, 11, MAKE_FLAG_NONE, {.f0 = rst5}},
     [0xFF] = {"RST 7", 1, 11, MAKE_FLAG_NONE, {.f0 = rst7}},
 
-    [0xC0] = {"RNZ", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
-    [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnc}},
-    [0xE0] = {"RPO", 1, 5, MAKE_FLAG_NONE, {.f0 = rpo}},
-    [0xF0] = {"RP", 1, 5, MAKE_FLAG_NONE, {.f0 = rp}},
-
+    // ==== Branch Group ====
+    [0xCB] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
+    [0xC3] = {"JMP a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jmp}},
     [0xC2] = {"JNZ a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jnz}},
     [0xD2] = {"JNC a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jnc}},
     [0xE2] = {"JPO a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jpo}},
     [0xF2] = {"JP a16", 3, 10, MAKE_FLAG_NONE, { .f2 = jp}},
-
-    [0xC4] = {"CNZ a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnz}},
-    [0xD4] = {"CNC a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnc}},
-    [0xE4] = {"CPO a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cpo}},
-    [0xF4] = {"CP a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cp}},
-
-    [0xC8] = {"RZ", 1, 5, MAKE_FLAG_NONE, {.f0  = rz}},
-    [0xD8] = {"RC", 1, 5, MAKE_FLAG_NONE, {.f0  = rc}},
-    [0xE8] = {"RPE", 1, 5, MAKE_FLAG_NONE, {.f0 = rpe}},
-    [0xF8] = {"RM", 1, 5, MAKE_FLAG_NONE, {.f0  = rm}},
-
     [0xCA] = {"JZ a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jz}},
     [0xDA] = {"JC a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jc}},
     [0xEA] = {"JPE a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jpe}},
     [0xFA] = {"JM a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jm}},
 
+    // ==== Call and Return Group ====
+    [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xDD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xED] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xFD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xC4] = {"CNZ a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnz}},
+    [0xD4] = {"CNC a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnc}},
+    [0xE4] = {"CPO a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cpo}},
+    [0xF4] = {"CP a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cp}},
     [0xCC] = {"CZ a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cz}},
     [0xDC] = {"CC a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cc}},
     [0xEC] = {"CPE a16",  3, 11, MAKE_FLAG_NONE, {.f2 = cpe}},
     [0xFC] = {"CM a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cm}},
 
-    [0xC1] = {"POP B", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
-    [0xD1] = {"POP D", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
-    [0xE1] = {"POP H", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
-    [0xF1] = {"POP PSW", 1, 10, MAKE_FLAG_ALL, {.f0 = pop_register}},
-
-    [0xC5] = {"PUSH B", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
-    [0xD5] = {"PUSH D", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
-    [0xE5] = {"PUSH H", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
-    [0xF5] = {"PUSH PSW", 1, 11, MAKE_FLAG_ALL, {.f0 = push_register}},
+    [0xC9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
+    [0xD9] = {"RET", 1, 10, MAKE_FLAG_NONE, {.f0 = ret}},
+    [0xC8] = {"RZ", 1, 5, MAKE_FLAG_NONE, {.f0  = rz}},
+    [0xD8] = {"RC", 1, 5, MAKE_FLAG_NONE, {.f0  = rc}},
+    [0xE8] = {"RPE", 1, 5, MAKE_FLAG_NONE, {.f0 = rpe}},
+    [0xF8] = {"RM", 1, 5, MAKE_FLAG_NONE, {.f0  = rm}},
+    [0xC0] = {"RNZ", 1, 5, MAKE_FLAG_NONE, {.f0 = rnz}},
+    [0xD0] = {"RNC", 1, 5, MAKE_FLAG_NONE, {.f0 = rnc}},
+    [0xE0] = {"RPO", 1, 5, MAKE_FLAG_NONE, {.f0 = rpo}},
+    [0xF0] = {"RP", 1, 5, MAKE_FLAG_NONE, {.f0 = rp}},
 
     // ==== Arithmetic Group ====
     [0x80] = {"ADD B", 1, 4, MAKE_FLAG_ALL, {.f0 = add}},
@@ -154,6 +143,7 @@ instr_info_t opcode_map[0x100] = {
     [0x19] = {"DAD C", 1, 10, MAKE_FLAG_CARRY, {.f0 = dad}},
     [0x29] = {"DAD H", 1, 10, MAKE_FLAG_CARRY, {.f0 = dad}},
     [0x39] = {"DAD SP", 1, 10, MAKE_FLAG_CARRY, {.f0 = dad}},
+    [0x27] = {"DAA", 1, 4, MAKE_FLAG_ALL,   {.f0 = daa}},
 
     // ==== Data Transfer Group ====
 
@@ -300,15 +290,28 @@ instr_info_t opcode_map[0x100] = {
     [0xEE] = {"XRI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = xri}},
     [0xFE] = {"CPI d8", 2, 7, MAKE_FLAG_ALL, {.f1 = cpi}},
 
+    [0x37] = {"STC", 1, 4, MAKE_FLAG_CARRY, {.f0 = stc}},
+    [0x2F] = {"CMA", 1, 4, MAKE_FLAG_NONE,  {.f0 = cma}},
+    [0x3F] = {"CMC", 1, 4, MAKE_FLAG_CARRY, {.f0 = cmc}},
+
+    // ==== Rotate ====
     [0x07] = {"RLC", 1, 4, MAKE_FLAG_CARRY, {.f0 = rlc}},
     [0x0F] = {"RRC", 1, 4, MAKE_FLAG_CARRY, {.f0 = rrc}},
     [0x17] = {"RAL", 1, 4, MAKE_FLAG_CARRY, {.f0 = ral}},
     [0x1F] = {"RAR", 1, 4, MAKE_FLAG_CARRY, {.f0 = rar}},
 
-    [0x27] = {"DAA", 1, 4, MAKE_FLAG_ALL,   {.f0 = daa}},
-    [0x37] = {"STC", 1, 4, MAKE_FLAG_CARRY, {.f0 = stc}},
-    [0x2F] = {"CMA", 1, 4, MAKE_FLAG_NONE,  {.f0 = cma}},
-    [0x3F] = {"CMC", 1, 4, MAKE_FLAG_CARRY, {.f0 = cmc}},
+    // ==== Stack, IO, Machine Control
+
+    [0xC1] = {"POP B", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
+    [0xD1] = {"POP D", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
+    [0xE1] = {"POP H", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
+    [0xF1] = {"POP PSW", 1, 10, MAKE_FLAG_ALL, {.f0 = pop_register}},
+
+    [0xC5] = {"PUSH B", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
+    [0xD5] = {"PUSH D", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
+    [0xE5] = {"PUSH H", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
+    [0xF5] = {"PUSH PSW", 1, 11, MAKE_FLAG_ALL, {.f0 = push_register}},
+
 
     // d8 == port - yields a number froms 0x00 to 0xFF
     [0xD3] = {"OUT d8", 2, 10, MAKE_FLAG_NONE, {.f1 = out}},
@@ -332,6 +335,16 @@ typedef enum {
 
 #define GET_SP(inc) (uint16_t)((cpu->regs.sp+inc) % 0x10000)
 
+#define POP_SP(cpu, data)               \
+    data = (get_byte(cpu, GET_SP(0)) |  \
+    (get_byte(cpu, GET_SP(1)) << 8));   \
+    cpu->regs.sp += 2;                  \
+
+#define PUSH_SP(cpu, data)                          \
+    cpu->regs.sp -= 2;                              \
+    write_byte(cpu, GET_SP(0), data & 0xFF);        \
+    write_byte(cpu, GET_SP(1), (data >> 8) & 0xFF); \
+
 #define CUR_OP(cpu) ((cpu)->mem.data[(cpu)->regs.pc])
 #define GET_INSTR(op) (opcode_map[op])
 #define GET_INSTR_CPU(cpu) (opcode_map[CUR_OP(cpu)])
@@ -345,8 +358,8 @@ typedef enum {
     flags.unused2 = 0; \
     flags.unused3 = 0;
 
-#define OP_DST_REG(cpu)  ((CUR_OP(cpu) & 0x38) >> 3)
-#define OP_SRC_REG(cpu)  (CUR_OP(cpu) & 0x7)
+#define OP_SRC_REG(cpu)  (CUR_OP(cpu) & 0x7)         // isolates bits  0,1,2
+#define OP_DST_REG(cpu)  ((CUR_OP(cpu) & 0x38) >> 3) // isolates bits, 3,4,5
 
 typedef enum {
     CARRY = 0,
@@ -489,15 +502,6 @@ static uint8_t get_byte(intel8080 *cpu, uint16_t addr) {
     return cpu->mem.data[addr];
 }
 
-static void push_pc(intel8080 *cpu) {
-    cpu->regs.pc += INSTR_SIZE(cpu);
-
-    cpu->regs.sp -= 2;
-    write_byte(cpu, GET_SP(0), (cpu->regs.pc & 0xFF));
-    write_byte(cpu, GET_SP(1), ((cpu->regs.pc >> 8) & 0xFF));
-}
-
-
 void mov(intel8080 *cpu) {
     registers reg_src = OP_SRC_REG(cpu);
     registers reg_dst = OP_DST_REG(cpu);
@@ -546,13 +550,7 @@ void lda(intel8080 *cpu, uint16_t addr) {
 }
 
 void ldax(intel8080 *cpu) {
-    uint16_t *reg_ptr = NULL;
-    if(CUR_OP(cpu) == 0x0A) {
-        reg_ptr = &cpu->regs.bc;
-    } else {
-        reg_ptr = &cpu->regs.de;
-    }
-
+    uint16_t *reg_ptr = !(CUR_OP(cpu) & 0x10) ? &cpu->regs.bc : &cpu->regs.de;
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Loading accumulator with value from the memory address 0x%02X(0x%02X)", ii.instruction, *reg_ptr, get_byte(cpu, *reg_ptr));
@@ -563,12 +561,7 @@ void ldax(intel8080 *cpu) {
 }
 
 void stax(intel8080 *cpu) {
-    uint16_t *reg_ptr = NULL;
-    if(CUR_OP(cpu) == 0x02) {
-        reg_ptr = &cpu->regs.bc;
-    } else {
-        reg_ptr = &cpu->regs.de;
-    }
+    uint16_t *reg_ptr = !(CUR_OP(cpu) & 0x10) ? &cpu->regs.bc : &cpu->regs.de;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Storing register A(0x%02X) into address 0x%04X", ii.instruction, cpu->regs.a, *reg_ptr);
@@ -619,68 +612,12 @@ void xthl(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void jmp(intel8080 *cpu, uint16_t data) {
+void jmp(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Jumping to address 0x%04X", ii.instruction, data);
+    LOG_DEBUG(cpu->regs.pc, "%s: Jumping to address 0x%04X", ii.instruction, addr);
 #endif
-    cpu->regs.pc = data;
-}
-
-void rnz(intel8080 *cpu) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Zero; Result: %d", ii.instruction, !cpu->regs.f.zero);
-#endif
-    if(cpu->regs.f.zero == 0) {
-        opcode_map[CUR_OP(cpu)].cycles = 11;
-        ret(cpu);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
-}
-
-void rnc(intel8080 *cpu) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Carry; Result: %d", ii.instruction, !cpu->regs.f.carry);
-#endif
-    if(cpu->regs.f.carry == 0) {
-        opcode_map[CUR_OP(cpu)].cycles = 11;
-        ret(cpu);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
-}
-
-void rpo(intel8080 *cpu) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Return if Parity Odd; Result: %d", ii.instruction, !cpu->regs.f.parity);
-#endif
-    if(cpu->regs.f.parity == 0) {
-        opcode_map[CUR_OP(cpu)].cycles = 11;
-        ret(cpu);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
-}
-
-void rp(intel8080 *cpu) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Return if Sign Positive; Result: %d", ii.instruction, !cpu->regs.f.sign);
-#endif
-    if(cpu->regs.f.sign == 0) {
-        opcode_map[CUR_OP(cpu)].cycles = 11;
-        ret(cpu);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
+    cpu->regs.pc = addr;
 }
 
 void jnz(intel8080 *cpu, uint16_t addr) {
@@ -719,44 +656,55 @@ void jp(intel8080 *cpu, uint16_t addr) {
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void rst(intel8080 *cpu, uint8_t instr) {
+void jz(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: RST %" PRIu8, ii.instruction, (CUR_OP(cpu) & 0x38) >> 3);
+    LOG_DEBUG(cpu->regs.pc, "%s: JZ to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero);
 #endif
-    call(cpu, instr);
+    if(cpu->regs.f.zero) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void rst0(intel8080 *cpu) {
-    call(cpu, 0xC7 & 0x38);
+void jc(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JC to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry);
+#endif
+    if(cpu->regs.f.carry) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void rst1(intel8080 *cpu) {
-    call(cpu, 0xCF & 0x38);
+void jpe(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JPE to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity);
+#endif
+    if(cpu->regs.f.parity) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void rst2(intel8080 *cpu) {
-    call(cpu, 0xD7 & 0x38);
+void jm(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: JM to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign);
+#endif
+    if(cpu->regs.f.sign) cpu->regs.pc = addr;
+    else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void rst3(intel8080 *cpu) {
-    call(cpu, 0xDF & 0x38);
-}
+void call(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    const uint16_t old_pc = cpu->regs.pc;
+    LOG_DEBUG(cpu->regs.pc, "%s: Calling method at address 0x%04X", ii.instruction, addr);
+#endif
+    cpu->regs.pc += INSTR_SIZE(cpu);
+    PUSH_SP(cpu, cpu->regs.pc);
+#ifdef DEBUG
+    LOG_DEBUG(old_pc, "%s: Pushing PC(0x%04X) at SP 0x%02X", ii.instruction, cpu->regs.pc, GET_SP(-1));
+#endif
 
-void rst4(intel8080 *cpu) {
-    call(cpu, 0xE7 & 0x38);
-}
-
-void rst5(intel8080 *cpu) {
-    call(cpu, 0xEF & 0x38);
-}
-
-void rst6(intel8080 *cpu) {
-    call(cpu, 0xF7 & 0x38);
-}
-
-void rst7(intel8080 *cpu) {
-    call(cpu, 0xFF & 0x38);
+    cpu->regs.pc = addr;
 }
 
 void cnz(intel8080 *cpu, uint16_t addr) {
@@ -815,6 +763,49 @@ void cp(intel8080 *cpu, uint16_t addr) {
     }
 }
 
+void rst0(intel8080 *cpu) {
+    call(cpu, 0xC7 & 0x38);
+}
+
+void rst1(intel8080 *cpu) {
+    call(cpu, 0xCF & 0x38);
+}
+
+void rst2(intel8080 *cpu) {
+    call(cpu, 0xD7 & 0x38);
+}
+
+void rst3(intel8080 *cpu) {
+    call(cpu, 0xDF & 0x38);
+}
+
+void rst4(intel8080 *cpu) {
+    call(cpu, 0xE7 & 0x38);
+}
+
+void rst5(intel8080 *cpu) {
+    call(cpu, 0xEF & 0x38);
+}
+
+void rst6(intel8080 *cpu) {
+    call(cpu, 0xF7 & 0x38);
+}
+
+void rst7(intel8080 *cpu) {
+    call(cpu, 0xFF & 0x38);
+}
+
+void ret(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    uint16_t old_pc = cpu->regs.pc;
+#endif
+    POP_SP(cpu, cpu->regs.pc);
+#ifdef DEBUG
+    LOG_DEBUG(old_pc, "%s: Returning to address at 0x%04X", ii.instruction, cpu->regs.pc);
+#endif
+}
+
 void rz(intel8080 *cpu) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
@@ -871,40 +862,60 @@ void rm(intel8080 *cpu) {
     }
 }
 
-void jz(intel8080 *cpu, uint16_t addr) {
+void rnz(intel8080 *cpu) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: JZ to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Zero; Result: %d", ii.instruction, !cpu->regs.f.zero);
 #endif
-    if(cpu->regs.f.zero) cpu->regs.pc = addr;
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(!cpu->regs.f.zero) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 5;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
-void jc(intel8080 *cpu, uint16_t addr) {
+void rnc(intel8080 *cpu) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: JC to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Not Carry; Result: %d", ii.instruction, !cpu->regs.f.carry);
 #endif
-    if(cpu->regs.f.carry) cpu->regs.pc = addr;
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(!cpu->regs.f.carry) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 5;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
-void jpe(intel8080 *cpu, uint16_t addr) {
+void rpo(intel8080 *cpu) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: JPE to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Parity Odd; Result: %d", ii.instruction, !cpu->regs.f.parity);
 #endif
-    if(cpu->regs.f.parity) cpu->regs.pc = addr;
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(!cpu->regs.f.parity) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 5;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
-void jm(intel8080 *cpu, uint16_t addr) {
+void rp(intel8080 *cpu) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: JM to address 0x%04X; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign);
+    LOG_DEBUG(cpu->regs.pc, "%s: Return if Sign Positive; Result: %d", ii.instruction, !cpu->regs.f.sign);
 #endif
-    if(cpu->regs.f.sign) cpu->regs.pc = addr;
-    else cpu->regs.pc += INSTR_SIZE(cpu);
+    if(!cpu->regs.f.sign) {
+        opcode_map[CUR_OP(cpu)].cycles = 11;
+        ret(cpu);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 5;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void cz(intel8080 *cpu, uint16_t addr) {
@@ -1001,9 +1012,7 @@ void push_register(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Pushing data: 0x%02X at SP 0x%04X", ii.instruction, *reg_ptr, cpu->regs.sp);
 #endif
 
-    cpu->regs.sp -= 2;
-    write_byte(cpu, GET_SP(0), (*reg_ptr >> 0) & 0xFF);
-    write_byte(cpu, GET_SP(1), (*reg_ptr >> 8) & 0xFF);
+    PUSH_SP(cpu, *reg_ptr);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1032,43 +1041,15 @@ void pop_register(intel8080 *cpu) {
             break;
     }
 
-    *reg_ptr = get_byte(cpu, GET_SP(0)) | (get_byte(cpu, GET_SP(1)) << 8);
+    POP_SP(cpu, *reg_ptr);
     SET_UNUSED(cpu->regs.f)
 
 #ifdef DEBUG
     LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) from stack", ii.instruction, *reg_ptr);
 #endif
-
-    cpu->regs.sp += 2;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void ret(intel8080 *cpu) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    uint16_t old_pc = cpu->regs.pc;
-#endif
-    cpu->regs.pc = get_byte(cpu, GET_SP(0)) | (get_byte(cpu, GET_SP(1)) << 8);
-                    
-    cpu->regs.sp += 2;
-#ifdef DEBUG
-    LOG_DEBUG(old_pc, "%s: Returning to address at 0x%04X", ii.instruction, cpu->regs.pc);
-#endif
-}
-
-void call(intel8080 *cpu, uint16_t data) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    const uint16_t old_pc = cpu->regs.pc;
-    LOG_DEBUG(cpu->regs.pc, "%s: Calling method at address 0x%04X", ii.instruction, data);
-#endif
-    push_pc(cpu);
-#ifdef DEBUG
-    LOG_DEBUG(old_pc, "%s: Pushing PC(0x%04X) at SP 0x%02X", ii.instruction, cpu->regs.pc, GET_SP(-1));
-#endif
-
-    cpu->regs.pc = data;
-}
 
 void pchl(intel8080 *cpu) {
 #ifdef DEBUG
@@ -1469,7 +1450,7 @@ void cpi(intel8080 *cpu, uint8_t data) {
 }
 
 void rlc(intel8080* cpu) {
-    cpu->regs.f.carry = (cpu->regs.a >> 7);
+    cpu->regs.f.carry = (cpu->regs.a >> 7) & 0x1;
     cpu->regs.a = (cpu->regs.a << 1) | cpu->regs.f.carry;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
@@ -1491,8 +1472,8 @@ void rrc(intel8080* cpu) {
 }
 
 void ral(intel8080* cpu) {
-    uint8_t temp = cpu->regs.f.carry;
-    cpu->regs.f.carry = cpu->regs.a >> 7;
+    uint8_t temp = cpu->regs.f.carry & 1;
+    cpu->regs.f.carry = (cpu->regs.a >> 7) & 0x1;
     cpu->regs.a = (cpu->regs.a << 1) | temp;
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
@@ -1503,7 +1484,7 @@ void ral(intel8080* cpu) {
 }
 
 void rar(intel8080* cpu) {
-    uint8_t temp = cpu->regs.f.carry;
+    uint8_t temp = cpu->regs.f.carry & 1;
     cpu->regs.f.carry = cpu->regs.a & 0x1;
     cpu->regs.a = (cpu->regs.a >> 1) | (temp << 7);
 #ifdef DEBUG
