@@ -304,15 +304,15 @@ instr_info_t opcode_map[0x100] = {
 
     // ==== Stack, IO, Machine Control
 
-    [0xC1] = {"POP B", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
-    [0xD1] = {"POP D", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
-    [0xE1] = {"POP H", 1, 10, MAKE_FLAG_NONE, {.f0 = pop_register}},
-    [0xF1] = {"POP PSW", 1, 10, MAKE_FLAG_ALL, {.f0 = pop_register}},
+    [0xC1] = {"POP B", 1, 10, MAKE_FLAG_NONE, {.f0 = pop}},
+    [0xD1] = {"POP D", 1, 10, MAKE_FLAG_NONE, {.f0 = pop}},
+    [0xE1] = {"POP H", 1, 10, MAKE_FLAG_NONE, {.f0 = pop}},
+    [0xF1] = {"POP PSW", 1, 10, MAKE_FLAG_ALL, {.f0 = pop}},
 
-    [0xC5] = {"PUSH B", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
-    [0xD5] = {"PUSH D", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
-    [0xE5] = {"PUSH H", 1, 11, MAKE_FLAG_NONE, {.f0 = push_register}},
-    [0xF5] = {"PUSH PSW", 1, 11, MAKE_FLAG_ALL, {.f0 = push_register}},
+    [0xC5] = {"PUSH B", 1, 11, MAKE_FLAG_NONE, {.f0 = push}},
+    [0xD5] = {"PUSH D", 1, 11, MAKE_FLAG_NONE, {.f0 = push}},
+    [0xE5] = {"PUSH H", 1, 11, MAKE_FLAG_NONE, {.f0 = push}},
+    [0xF5] = {"PUSH PSW", 1, 11, MAKE_FLAG_ALL, {.f0 = push}},
 
 
     // d8 == port - yields a number froms 0x00 to 0xFF
@@ -1499,7 +1499,7 @@ void rar(intel8080* cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void pop_register(intel8080 *cpu) {
+void pop(intel8080 *cpu) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     uint16_t *reg_ptr = NULL;
     switch(OP_DST_REG(cpu)) {
@@ -1533,7 +1533,7 @@ void pop_register(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void push_register(intel8080 *cpu) {
+void push(intel8080 *cpu) {
     uint16_t *reg_ptr = NULL;
     switch(OP_DST_REG(cpu)){
         case REG_M:

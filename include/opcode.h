@@ -53,8 +53,8 @@ void lxi(intel8080 *cpu, uint16_t data);
 void xchg(intel8080 *cpu); // Swaps H and L with D and E
 void xthl(intel8080 *cpu); // Swaps L with SP and H with SP + 1
 
-void pop_register(intel8080 *cpu);
-void push_register(intel8080 *cpu);
+void pop(intel8080 *cpu);
+void push(intel8080 *cpu);
 
 // ===== Arithmetic Instructions Group ======
 // Add/sub to accumulator
