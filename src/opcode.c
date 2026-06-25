@@ -15,9 +15,6 @@ instr_info_t opcode_map[0x100] = {
     [0x28] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
     [0x38] = {"NOP", 1, 4, MAKE_FLAG_NONE, {.f0 = NULL}},
 
-    [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
-    [0xF9] = {"SPHL", 1, 5, MAKE_FLAG_NONE, {.f0 = sphl}},
-
     // ==== Resets ====
     [0xC7] = {"RST 0", 1, 11, MAKE_FLAG_NONE, {.f0 = rst0}},
     [0xD7] = {"RST 2", 1, 11, MAKE_FLAG_NONE, {.f0 = rst2}},
@@ -124,11 +121,6 @@ instr_info_t opcode_map[0x100] = {
     [0x2B] = {"DCX H", 1, 5, MAKE_FLAG_NONE, {.f0 = dcx}},
     [0x3B] = {"DCX SP", 1, 5, MAKE_FLAG_NONE, {.f0 = dcx}},
 
-    [0x03] = {"INX B", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
-    [0x13] = {"INX D", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
-    [0x23] = {"INX H", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
-    [0x33] = {"INX SP", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
-
     [0x04] = {"INR B", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
     [0x14] = {"INR D", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
     [0x24] = {"INR H", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
@@ -138,6 +130,11 @@ instr_info_t opcode_map[0x100] = {
     [0x1C] = {"INR E", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
     [0x2C] = {"INR L", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
     [0x3C] = {"INR A", 1, 5, MAKE_FLAG_SZAP, {.f0 = inr}},
+
+    [0x03] = {"INX B", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
+    [0x13] = {"INX D", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
+    [0x23] = {"INX H", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
+    [0x33] = {"INX SP", 1, 5, MAKE_FLAG_NONE, {.f0 = inx}},
 
     [0x09] = {"DAD B", 1, 10, MAKE_FLAG_CARRY, {.f0 = dad}},
     [0x19] = {"DAD C", 1, 10, MAKE_FLAG_CARRY, {.f0 = dad}},
@@ -228,24 +225,29 @@ instr_info_t opcode_map[0x100] = {
     [0x36] = {"MVI M, d8", 2, 10, MAKE_FLAG_NONE, {.f1 = mvi}},
     [0x3E] = {"MVI A, d8", 2, 7, MAKE_FLAG_NONE, {.f1 = mvi}},
 
-    [0x32] = {"STA a16", 3, 13, MAKE_FLAG_NONE, {.f2 = sta}},
-    [0x3A] = {"LDA a16", 3, 13, MAKE_FLAG_NONE, {.f2 = lda}},
-
-    [0x22] = {"SHLD a16", 3, 16, MAKE_FLAG_NONE, {.f2 = shld}},
-    [0x2A] = {"LHLD a16", 3, 16, MAKE_FLAG_NONE, {.f2 = lhld}},
-
     // Load the 16-bit raw value into the register (BDH) or SP
     [0x01] = {"LXI B, d16", 3, 10, MAKE_FLAG_NONE, {.f2 = lxi}},
     [0x11] = {"LXI D, d16", 3, 10, MAKE_FLAG_NONE, {.f2 = lxi}},
     [0x21] = {"LXI H, d16", 3, 10, MAKE_FLAG_NONE, {.f2 = lxi}},
     [0x31] = {"LXI SP, d16", 3, 10, MAKE_FLAG_NONE, {.f2 = lxi}},
 
+
+    [0x32] = {"STA a16", 3, 13, MAKE_FLAG_NONE, {.f2 = sta}},
+    [0x3A] = {"LDA a16", 3, 13, MAKE_FLAG_NONE, {.f2 = lda}},
+
     [0x0A] = {"LDAX B", 1, 7, MAKE_FLAG_NONE, {.f0 = ldax}},
     [0x1A] = {"LDAX D", 1, 7, MAKE_FLAG_NONE, {.f0 = ldax}},
     [0x02] = {"STAX B", 1, 7, MAKE_FLAG_NONE, {.f0 = stax}},
     [0X12] = {"STAX D", 1, 7, MAKE_FLAG_NONE, {.f0 = stax}},
+
     [0xE3] = {"XTHL", 1, 18, MAKE_FLAG_NONE, {.f0 = xthl}},
     [0xEB] = {"XCHG", 1, 5, MAKE_FLAG_NONE, {.f0 = xchg}},
+
+    [0x22] = {"SHLD a16", 3, 16, MAKE_FLAG_NONE, {.f2 = shld}},
+    [0x2A] = {"LHLD a16", 3, 16, MAKE_FLAG_NONE, {.f2 = lhld}},
+
+    [0xE9] = {"PCHL", 1, 5, MAKE_FLAG_NONE, {.f0 = pchl}},
+    [0xF9] = {"SPHL", 1, 5, MAKE_FLAG_NONE, {.f0 = sphl}},
 
     // ==== Logical Group ====
     [0xA0] = {"ANA B", 1, 4, MAKE_FLAG_ALL, {.f0 = ana}},
@@ -502,114 +504,36 @@ static uint8_t get_byte(intel8080 *cpu, uint16_t addr) {
     return cpu->mem.data[addr];
 }
 
-void mov(intel8080 *cpu) {
-    registers reg_src = OP_SRC_REG(cpu);
-    registers reg_dst = OP_DST_REG(cpu);
-    uint8_t *dst = get_register(cpu, reg_dst);
-    uint8_t *src = get_register(cpu, reg_src);
-
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Moving data from register %c (0x%02X) to %c (0x%02X)", ii.instruction, 
-              get_register_char(reg_src), *src, get_register_char(reg_dst), *dst);
-#endif
-
-    *dst = *src;
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void rst0(intel8080 *cpu) {
+    call(cpu, 0xC7 & 0x38);
 }
 
-void mvi(intel8080 *cpu, uint8_t data) {
-    registers_t *regs = &cpu->regs;
-    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
-
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying data 0x%02X", ii.instruction, data);
-#endif
-
-    *reg_ptr = data;
-    regs->pc += INSTR_SIZE(cpu);
+void rst1(intel8080 *cpu) {
+    call(cpu, 0xCF & 0x38);
 }
 
-void sta(intel8080 *cpu, uint16_t addr) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Loading register A(0x%02X) into memory address 0x%04X", ii.instruction, cpu->regs.a, addr);
-#endif
-    write_byte(cpu, addr, cpu->regs.a);
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void rst2(intel8080 *cpu) {
+    call(cpu, 0xD7 & 0x38);
 }
 
-void lda(intel8080 *cpu, uint16_t addr) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying data from memory address 0x%04X(0x%02X) into the accumulator", ii.instruction, addr, get_byte(cpu, addr));
-#endif
-    cpu->regs.a = get_byte(cpu, addr);
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void rst3(intel8080 *cpu) {
+    call(cpu, 0xDF & 0x38);
 }
 
-void ldax(intel8080 *cpu) {
-    uint16_t *reg_ptr = !(CUR_OP(cpu) & 0x10) ? &cpu->regs.bc : &cpu->regs.de;
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Loading accumulator with value from the memory address 0x%02X(0x%02X)", ii.instruction, *reg_ptr, get_byte(cpu, *reg_ptr));
-#endif
-
-    cpu->regs.a = get_byte(cpu, *reg_ptr);
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void rst4(intel8080 *cpu) {
+    call(cpu, 0xE7 & 0x38);
 }
 
-void stax(intel8080 *cpu) {
-    uint16_t *reg_ptr = !(CUR_OP(cpu) & 0x10) ? &cpu->regs.bc : &cpu->regs.de;
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Storing register A(0x%02X) into address 0x%04X", ii.instruction, cpu->regs.a, *reg_ptr);
-#endif
-
-    write_byte(cpu, *reg_ptr, cpu->regs.a);
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void rst5(intel8080 *cpu) {
+    call(cpu, 0xEF & 0x38);
 }
 
-void lhld(intel8080 *cpu, uint16_t addr) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Setting L to data at address 0x%04X(0x%02X)", ii.instruction, addr, get_byte(cpu, addr));
-    LOG_DEBUG(cpu->regs.pc, "%s: Setting H to data at address 0x%04X(0x%02X)", ii.instruction, addr+1, get_byte(cpu, addr+1));
-#endif
-    cpu->regs.l = get_byte(cpu, addr);
-    cpu->regs.h = get_byte(cpu, addr+1);
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void rst6(intel8080 *cpu) {
+    call(cpu, 0xF7 & 0x38);
 }
 
-void shld(intel8080 *cpu, uint16_t addr) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying L(0x%02X) to address 0x%04X", ii.instruction, cpu->regs.l, addr);
-    LOG_DEBUG(cpu->regs.pc, "%s: Copying H(0x%02X) to address 0x%04X", ii.instruction, cpu->regs.h, addr+1);
-#endif
-    write_byte(cpu, addr, cpu->regs.l);
-    write_byte(cpu, addr+1, cpu->regs.h);
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
-void xchg(intel8080 *cpu) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) and DE(0x%04X), respectively", ii.instruction, cpu->regs.hl, cpu->regs.de);
-#endif
-    swap_u16(&cpu->regs.hl, &cpu->regs.de);
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
-void xthl(intel8080 *cpu) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP(0x%02X) and SP+1(0x%02X)", ii.instruction, cpu->regs.hl, get_byte(cpu, cpu->regs.sp), get_byte(cpu, cpu->regs.sp+1);
-#endif
-    swap_u8(&cpu->regs.l, &cpu->mem.data[GET_SP(0)]);
-    swap_u8(&cpu->regs.h, &cpu->mem.data[GET_SP(1)]);
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void rst7(intel8080 *cpu) {
+    call(cpu, 0xFF & 0x38);
 }
 
 void jmp(intel8080 *cpu, uint16_t addr) {
@@ -763,36 +687,60 @@ void cp(intel8080 *cpu, uint16_t addr) {
     }
 }
 
-void rst0(intel8080 *cpu) {
-    call(cpu, 0xC7 & 0x38);
+void cz(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Zero; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero == 1);
+#endif
+    if(cpu->regs.f.zero == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
-void rst1(intel8080 *cpu) {
-    call(cpu, 0xCF & 0x38);
+void cc(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Carry; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry == 1);
+#endif
+    if(cpu->regs.f.carry == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
-void rst2(intel8080 *cpu) {
-    call(cpu, 0xD7 & 0x38);
+void cpe(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Parity Even; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity == 1);
+#endif
+    if(cpu->regs.f.parity == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
-void rst3(intel8080 *cpu) {
-    call(cpu, 0xDF & 0x38);
-}
-
-void rst4(intel8080 *cpu) {
-    call(cpu, 0xE7 & 0x38);
-}
-
-void rst5(intel8080 *cpu) {
-    call(cpu, 0xEF & 0x38);
-}
-
-void rst6(intel8080 *cpu) {
-    call(cpu, 0xF7 & 0x38);
-}
-
-void rst7(intel8080 *cpu) {
-    call(cpu, 0xFF & 0x38);
+void cm(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Minus; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 1);
+#endif
+    if(cpu->regs.f.sign == 1) {
+        opcode_map[CUR_OP(cpu)].cycles = 17;
+        call(cpu, addr);
+    } else {
+        opcode_map[CUR_OP(cpu)].cycles = 16;
+        cpu->regs.pc += INSTR_SIZE(cpu);
+    }
 }
 
 void ret(intel8080 *cpu) {
@@ -918,60 +866,33 @@ void rp(intel8080 *cpu) {
     }
 }
 
-void cz(intel8080 *cpu, uint16_t addr) {
+void mov(intel8080 *cpu) {
+    registers reg_src = OP_SRC_REG(cpu);
+    registers reg_dst = OP_DST_REG(cpu);
+    uint8_t *dst = get_register(cpu, reg_dst);
+    uint8_t *src = get_register(cpu, reg_src);
+
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Zero; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.zero == 1);
+    LOG_DEBUG(cpu->regs.pc, "%s: Moving data from register %c (0x%02X) to %c (0x%02X)", ii.instruction, 
+              get_register_char(reg_src), *src, get_register_char(reg_dst), *dst);
 #endif
-    if(cpu->regs.f.zero == 1) {
-        opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
+
+    *dst = *src;
+    cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void cc(intel8080 *cpu, uint16_t addr) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Carry; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.carry == 1);
-#endif
-    if(cpu->regs.f.carry == 1) {
-        opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
-}
+void mvi(intel8080 *cpu, uint8_t data) {
+    registers_t *regs = &cpu->regs;
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
 
-void cpe(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Parity Even; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.parity == 1);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying data 0x%02X", ii.instruction, data);
 #endif
-    if(cpu->regs.f.parity == 1) {
-        opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
-}
 
-void cm(intel8080 *cpu, uint16_t addr) {
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Call 0x%04X if Sign Minus; Result: %" PRIu8, ii.instruction, addr, cpu->regs.f.sign == 1);
-#endif
-    if(cpu->regs.f.sign == 1) {
-        opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
-    } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
-        cpu->regs.pc += INSTR_SIZE(cpu);
-    }
+    *reg_ptr = data;
+    regs->pc += INSTR_SIZE(cpu);
 }
 
 void lxi(intel8080 *cpu, uint16_t data) {
@@ -995,61 +916,86 @@ void lxi(intel8080 *cpu, uint16_t data) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void push_register(intel8080 *cpu) {
-    uint16_t *reg_ptr = NULL;
-    switch(OP_DST_REG(cpu)){
-        case REG_M:
-        case REG_A:
-            reg_ptr = &cpu->regs.psw;
-            break;
-        default:
-            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
-            break;
-    }
+void sta(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Loading register A(0x%02X) into memory address 0x%04X", ii.instruction, cpu->regs.a, addr);
+#endif
+    write_byte(cpu, addr, cpu->regs.a);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void lda(intel8080 *cpu, uint16_t addr) {
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    const uint8_t *instr = &cpu->mem.data[cpu->regs.pc];
-    LOG_DEBUG(cpu->regs.pc, "%s: Pushing data: 0x%02X at SP 0x%04X", ii.instruction, *reg_ptr, cpu->regs.sp);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying data from memory address 0x%04X(0x%02X) into the accumulator", ii.instruction, addr, get_byte(cpu, addr));
 #endif
-
-    PUSH_SP(cpu, *reg_ptr);
+    cpu->regs.a = get_byte(cpu, addr);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void pop_register(intel8080 *cpu) {
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    uint16_t *reg_ptr = NULL;
-    switch(OP_DST_REG(cpu)) {
-        case REG_B:
-        case REG_C:
-            reg_ptr = &cpu->regs.bc;
-            break;
-        case REG_E:
-        case REG_D:
-            reg_ptr = &cpu->regs.de;
-            break;
-        case REG_L:
-        case REG_H:
-            reg_ptr = &cpu->regs.hl;
-            break;
-        case REG_M:
-        case REG_A:
-            reg_ptr = &cpu->regs.psw;
-            break;
-        default:
-            fprintf(stderr, "ERROR Unknown POP instruction: %2X\n", CUR_OP(cpu));
-            break;
-    }
-
-    POP_SP(cpu, *reg_ptr);
-    SET_UNUSED(cpu->regs.f)
-
+void ldax(intel8080 *cpu) {
+    uint16_t *reg_ptr = !(CUR_OP(cpu) & 0x10) ? &cpu->regs.bc : &cpu->regs.de;
 #ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) from stack", ii.instruction, *reg_ptr);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Loading accumulator with value from the memory address 0x%02X(0x%02X)", ii.instruction, *reg_ptr, get_byte(cpu, *reg_ptr));
 #endif
+
+    cpu->regs.a = get_byte(cpu, *reg_ptr);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
+void stax(intel8080 *cpu) {
+    uint16_t *reg_ptr = !(CUR_OP(cpu) & 0x10) ? &cpu->regs.bc : &cpu->regs.de;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Storing register A(0x%02X) into address 0x%04X", ii.instruction, cpu->regs.a, *reg_ptr);
+#endif
+
+    write_byte(cpu, *reg_ptr, cpu->regs.a);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void xthl(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP(0x%02X) and SP+1(0x%02X)", ii.instruction, cpu->regs.hl, get_byte(cpu, cpu->regs.sp), get_byte(cpu, cpu->regs.sp+1);
+#endif
+    swap_u8(&cpu->regs.l, &cpu->mem.data[GET_SP(0)]);
+    swap_u8(&cpu->regs.h, &cpu->mem.data[GET_SP(1)]);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void xchg(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) and DE(0x%04X), respectively", ii.instruction, cpu->regs.hl, cpu->regs.de);
+#endif
+    swap_u16(&cpu->regs.hl, &cpu->regs.de);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void shld(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying L(0x%02X) to address 0x%04X", ii.instruction, cpu->regs.l, addr);
+    LOG_DEBUG(cpu->regs.pc, "%s: Copying H(0x%02X) to address 0x%04X", ii.instruction, cpu->regs.h, addr+1);
+#endif
+    write_byte(cpu, addr, cpu->regs.l);
+    write_byte(cpu, addr+1, cpu->regs.h);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void lhld(intel8080 *cpu, uint16_t addr) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting L to data at address 0x%04X(0x%02X)", ii.instruction, addr, get_byte(cpu, addr));
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting H to data at address 0x%04X(0x%02X)", ii.instruction, addr+1, get_byte(cpu, addr+1));
+#endif
+    cpu->regs.l = get_byte(cpu, addr);
+    cpu->regs.h = get_byte(cpu, addr+1);
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
 
 void pchl(intel8080 *cpu) {
 #ifdef DEBUG
@@ -1065,46 +1011,6 @@ void sphl(intel8080 *cpu) {
     LOG_DEBUG(cpu->regs.pc, "%s: Setting SP to contents of HL(0x%02X)", ii.instruction, cpu->regs.hl); 
 #endif
     cpu->regs.sp = cpu->regs.hl;
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
-void dad(intel8080 *cpu) {
-    uint16_t *reg_ptr = NULL;
-    switch(OP_DST_REG(cpu)){
-        case REG_M:
-        case REG_A:
-            reg_ptr = &cpu->regs.sp;
-            break;
-        default:
-            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
-            break;
-    };
-
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to the HL register; Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.hl + *reg_ptr);
-#endif
-
-    uint32_t t = (uint32_t)cpu->regs.hl + (uint32_t)(*reg_ptr);
-    cpu->regs.f.carry = t > 0xFFFF;
-    cpu->regs.hl = (uint16_t)t;
-
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
-void inr(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Incrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
-#endif
-
-    if(reg_ptr) {
-        cpu->regs.f.aux_carry = aux_carry(*reg_ptr, 1, 0);
-        (*reg_ptr)++;
-        modify_flags(*reg_ptr, &cpu->regs, FLAG_ACCESS(cpu));
-    }
-
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1134,41 +1040,6 @@ void sub(intel8080 *cpu) {
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
     cpu->regs.f.carry = !carry(cpu->regs.a, ~(*reg_ptr), 1);
     cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, ~(*reg_ptr), 1);
-
-    cpu->regs.a = t;
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
-void adc(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
-    uint8_t old_cy = cpu->regs.f.carry;
-    uint8_t t = cpu->regs.a + *reg_ptr + old_cy;
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to accumulator(0x%02X) + carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
-#endif
-
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-
-    cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, *reg_ptr, old_cy);
-    cpu->regs.f.carry = cpu->regs.a + *reg_ptr + old_cy > 0xFF;
-
-    cpu->regs.a = t;
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
-void sbb(intel8080 *cpu) {
-    uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
-    uint8_t old_cy = cpu->regs.f.carry;
-    uint8_t t = cpu->regs.a - *reg_ptr - old_cy;
-#ifdef DEBUG
-    instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Subtracting 0x%02X to accumulator(0x%02X) - carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
-#endif
-
-    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, ~(*reg_ptr), (1 - old_cy));
-    cpu->regs.f.carry = cpu->regs.a < (uint16_t)(*reg_ptr + old_cy) ? 1 : 0;
 
     cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
@@ -1234,42 +1105,56 @@ void sbi(intel8080 *cpu, uint8_t data) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void inx(intel8080 *cpu) {
+void adc(intel8080 *cpu) {
+    uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
+    uint8_t old_cy = cpu->regs.f.carry;
+    uint8_t t = cpu->regs.a + *reg_ptr + old_cy;
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Incrementing values ", ii.instruction);
-
-    switch(OP_DST_REG(cpu)) {
-        case REG_B:
-        case REG_C:
-            LOG_DEBUG(cpu->regs.pc, "BC: 0x%02X", cpu->regs.bc);
-            break;
-        case REG_E:
-        case REG_D:
-            LOG_DEBUG(cpu->regs.pc, "DE: 0x%02X", cpu->regs.de);
-            break;
-        case REG_H:
-        case REG_L:
-            LOG_DEBUG(cpu->regs.pc, "HL: 0x%02X", cpu->regs.hl);
-            break;
-        case REG_M:
-        case REG_A:
-            LOG_DEBUG(cpu->regs.pc, "SP: 0x%02X", cpu->regs.sp );
-            break;
-    };
+    LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to accumulator(0x%02X) + carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
 #endif
-    uint16_t *reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
-    switch(OP_DST_REG(cpu)){
-        case REG_M:
-        case REG_A:
-            cpu->regs.sp++;
-            break;
-        default:
-            (*reg_ptr)++;
-            break;
-    };
 
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
+
+    cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, *reg_ptr, old_cy);
+    cpu->regs.f.carry = cpu->regs.a + *reg_ptr + old_cy > 0xFF;
+
+    cpu->regs.a = t;
     cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void sbb(intel8080 *cpu) {
+    uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
+    uint8_t old_cy = cpu->regs.f.carry;
+    uint8_t t = cpu->regs.a - *reg_ptr - old_cy;
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Subtracting 0x%02X to accumulator(0x%02X) - carry(%" PRIu8"); Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.a, cpu->regs.f.carry, t);
+#endif
+
+    modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, ~(*reg_ptr), (1 - old_cy));
+    cpu->regs.f.carry = cpu->regs.a < (uint16_t)(*reg_ptr + old_cy) ? 1 : 0;
+
+    cpu->regs.a = t;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void dcr(intel8080 *cpu) {
+    registers_t *regs = &cpu->regs;
+    uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Decrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
+#endif
+
+    cpu->regs.f.aux_carry = ((*reg_ptr & 0x0F) != 0);
+    (*reg_ptr)--;
+
+    modify_flags(*reg_ptr, regs, FLAG_ACCESS(cpu));
+
+    regs->pc += INSTR_SIZE(cpu);
 }
 
 void dcx(intel8080 *cpu) {
@@ -1310,21 +1195,113 @@ void dcx(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void dcr(intel8080 *cpu) {
-    registers_t *regs = &cpu->regs;
+void inr(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_DST_REG(cpu));
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Incrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
+#endif
+
+    if(reg_ptr) {
+        cpu->regs.f.aux_carry = aux_carry(*reg_ptr, 1, 0);
+        (*reg_ptr)++;
+        modify_flags(*reg_ptr, &cpu->regs, FLAG_ACCESS(cpu));
+    }
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void inx(intel8080 *cpu) {
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Incrementing values ", ii.instruction);
+
+    switch(OP_DST_REG(cpu)) {
+        case REG_B:
+        case REG_C:
+            LOG_DEBUG(cpu->regs.pc, "BC: 0x%02X", cpu->regs.bc);
+            break;
+        case REG_E:
+        case REG_D:
+            LOG_DEBUG(cpu->regs.pc, "DE: 0x%02X", cpu->regs.de);
+            break;
+        case REG_H:
+        case REG_L:
+            LOG_DEBUG(cpu->regs.pc, "HL: 0x%02X", cpu->regs.hl);
+            break;
+        case REG_M:
+        case REG_A:
+            LOG_DEBUG(cpu->regs.pc, "SP: 0x%02X", cpu->regs.sp );
+            break;
+    };
+#endif
+    uint16_t *reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
+    switch(OP_DST_REG(cpu)){
+        case REG_M:
+        case REG_A:
+            cpu->regs.sp++;
+            break;
+        default:
+            (*reg_ptr)++;
+            break;
+    };
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void dad(intel8080 *cpu) {
+    uint16_t *reg_ptr = NULL;
+    switch(OP_DST_REG(cpu)){
+        case REG_M:
+        case REG_A:
+            reg_ptr = &cpu->regs.sp;
+            break;
+        default:
+            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
+            break;
+    };
+
+#ifdef DEBUG
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Adding 0x%02X to the HL register; Result: 0x%02X", ii.instruction, *reg_ptr, cpu->regs.hl + *reg_ptr);
+#endif
+
+    uint32_t t = (uint32_t)cpu->regs.hl + (uint32_t)(*reg_ptr);
+    cpu->regs.f.carry = t > 0xFFFF;
+    cpu->regs.hl = (uint16_t)t;
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void daa(intel8080 *cpu) {
+    uint8_t total = 0;
+    uint8_t old_carry = cpu->regs.f.carry;
+    uint8_t old_aux_carry = cpu->regs.f.aux_carry;
+
+    if((cpu->regs.a & 0x0F) > 9 || old_aux_carry) {
+        total += 0x06;
+    }
+
+    if(((cpu->regs.a >> 4) & 0x0F) > 9 || 
+       ((cpu->regs.a + total) >> 4 & 0x0F) > 9 || old_carry) {
+        total += 0x60;
+    }
 
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Decrementing value 0x%02X", ii.instruction, reg_ptr ? *reg_ptr : 0);
+    LOG_DEBUG(cpu->regs.pc, "%s: Double Add Total: %" PRIu8, ii.instruction, total);
 #endif
 
-    cpu->regs.f.aux_carry = ((*reg_ptr & 0x0F) != 0);
-    (*reg_ptr)--;
+    uint8_t result = cpu->regs.a + total;
+    modify_flags(result, &cpu->regs, FLAG_ACCESS(cpu));
 
-    modify_flags(*reg_ptr, regs, FLAG_ACCESS(cpu));
+    if(old_carry) cpu->regs.f.carry = old_carry;
+    else cpu->regs.f.carry = carry(cpu->regs.a, total, 0);
 
-    regs->pc += INSTR_SIZE(cpu);
+    cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, total, 0);
+    cpu->regs.a += total;
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
 void ana(intel8080 *cpu) {
@@ -1343,21 +1320,6 @@ void ana(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void ani(intel8080 *cpu, uint8_t data) {
-#ifdef DEBUG
-    uint8_t x = cpu->regs.a & data;
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Logical AND; Data(0x%02X) & Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
-#endif
-    cpu->regs.f.aux_carry = ((cpu->regs.a | data) & 0x08) != 0;
-    cpu->regs.a &= data;
-
-    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.carry = 0;
-
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
 void ora(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
     uint8_t x = cpu->regs.a | *reg_ptr;
@@ -1370,6 +1332,21 @@ void ora(intel8080 *cpu) {
 
     cpu->regs.f.carry = 0;
     cpu->regs.f.aux_carry = 0;
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void ani(intel8080 *cpu, uint8_t data) {
+#ifdef DEBUG
+    uint8_t x = cpu->regs.a & data;
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical AND; Data(0x%02X) & Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
+#endif
+    cpu->regs.f.aux_carry = ((cpu->regs.a | data) & 0x08) != 0;
+    cpu->regs.a &= data;
+
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.f.carry = 0;
 
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
@@ -1403,20 +1380,6 @@ void xra(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void xri(intel8080 *cpu, uint8_t data) {
-    uint8_t x = cpu->regs.a ^ data;
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Logical XOR; Data(0x%02X) ^ Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
-#endif
-    cpu->regs.a = x;
-    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
-    cpu->regs.f.carry = 0;
-    cpu->regs.f.aux_carry = 0;
-
-    cpu->regs.pc += INSTR_SIZE(cpu);
-}
-
 void cmp(intel8080 *cpu) {
     uint8_t *reg_ptr = get_register(cpu, OP_SRC_REG(cpu));
 
@@ -1434,6 +1397,20 @@ void cmp(intel8080 *cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
+void xri(intel8080 *cpu, uint8_t data) {
+    uint8_t x = cpu->regs.a ^ data;
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Logical XOR; Data(0x%02X) ^ Accumulator(0x%02X); Result: 0x%02X", ii.instruction, data, cpu->regs.a, x);
+#endif
+    cpu->regs.a = x;
+    modify_flags(cpu->regs.a, &cpu->regs, FLAG_ACCESS(cpu));
+    cpu->regs.f.carry = 0;
+    cpu->regs.f.aux_carry = 0;
+
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
 void cpi(intel8080 *cpu, uint8_t data) {
     uint8_t t = cpu->regs.a - data;
     modify_flags(t, &cpu->regs, FLAG_ACCESS(cpu));
@@ -1446,6 +1423,33 @@ void cpi(intel8080 *cpu, uint8_t data) {
     LOG_DEBUG(cpu->regs.pc, "%s: Result: 0x%02X", ii.instruction, t);
 #endif
 
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void stc(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Setting carry to 1", ii.instruction);
+#endif
+    cpu->regs.f.carry = 1;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cma(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Complementing accumulator: 0x%02X", ii.instruction, ~cpu->regs.a);
+#endif
+    cpu->regs.a = ~cpu->regs.a;
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void cmc(intel8080 *cpu) {
+#ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    LOG_DEBUG(cpu->regs.pc, "%s: Complementing carry: 0x%02X", ii.instruction, ~cpu->regs.f.carry);
+#endif
+    cpu->regs.f.carry = !cpu->regs.f.carry;
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
@@ -1495,62 +1499,85 @@ void rar(intel8080* cpu) {
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void daa(intel8080 *cpu) {
-    uint8_t total = 0;
-    uint8_t old_carry = cpu->regs.f.carry;
-    uint8_t old_aux_carry = cpu->regs.f.aux_carry;
-
-    if((cpu->regs.a & 0x0F) > 9 || old_aux_carry) {
-        total += 0x06;
+void pop_register(intel8080 *cpu) {
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+    uint16_t *reg_ptr = NULL;
+    switch(OP_DST_REG(cpu)) {
+        case REG_B:
+        case REG_C:
+            reg_ptr = &cpu->regs.bc;
+            break;
+        case REG_E:
+        case REG_D:
+            reg_ptr = &cpu->regs.de;
+            break;
+        case REG_L:
+        case REG_H:
+            reg_ptr = &cpu->regs.hl;
+            break;
+        case REG_M:
+        case REG_A:
+            reg_ptr = &cpu->regs.psw;
+            break;
+        default:
+            fprintf(stderr, "ERROR Unknown POP instruction: %2X\n", CUR_OP(cpu));
+            break;
     }
 
-    if(((cpu->regs.a >> 4) & 0x0F) > 9 || 
-       ((cpu->regs.a + total) >> 4 & 0x0F) > 9 || old_carry) {
-        total += 0x60;
+    POP_SP(cpu, *reg_ptr);
+    SET_UNUSED(cpu->regs.f)
+
+#ifdef DEBUG
+    LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) from stack", ii.instruction, *reg_ptr);
+#endif
+    cpu->regs.pc += INSTR_SIZE(cpu);
+}
+
+void push_register(intel8080 *cpu) {
+    uint16_t *reg_ptr = NULL;
+    switch(OP_DST_REG(cpu)){
+        case REG_M:
+        case REG_A:
+            reg_ptr = &cpu->regs.psw;
+            break;
+        default:
+            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
+            break;
     }
-
 #ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Double Add Total: %" PRIu8, ii.instruction, total);
+    instr_info_t ii = GET_INSTR_CPU(cpu);
+    const uint8_t *instr = &cpu->mem.data[cpu->regs.pc];
+    LOG_DEBUG(cpu->regs.pc, "%s: Pushing data: 0x%02X at SP 0x%04X", ii.instruction, *reg_ptr, cpu->regs.sp);
 #endif
 
-    uint8_t result = cpu->regs.a + total;
-    modify_flags(result, &cpu->regs, FLAG_ACCESS(cpu));
-
-    if(old_carry) cpu->regs.f.carry = old_carry;
-    else cpu->regs.f.carry = carry(cpu->regs.a, total, 0);
-
-    cpu->regs.f.aux_carry = aux_carry(cpu->regs.a, total, 0);
-    cpu->regs.a += total;
-
+    PUSH_SP(cpu, *reg_ptr);
     cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void cma(intel8080 *cpu) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Complementing accumulator: 0x%02X", ii.instruction, ~cpu->regs.a);
-#endif
-    cpu->regs.a = ~cpu->regs.a;
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void set_in(void (*in_function)(intel8080 *cpu, uint8_t port)) {
+    opcode_map[0xDB].handler.f1 = in_function;
 }
 
-void cmc(intel8080 *cpu) {
-#ifdef DEBUG
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Complementing carry: 0x%02X", ii.instruction, ~cpu->regs.f.carry);
-#endif
-    cpu->regs.f.carry = !cpu->regs.f.carry;
-    cpu->regs.pc += INSTR_SIZE(cpu);
+void set_out(void (*out_function)(intel8080 *cpu, uint8_t port)) {
+    opcode_map[0xD3].handler.f1 = out_function;
 }
 
-void stc(intel8080 *cpu) {
-#ifdef DEBUG
+void in(intel8080 *cpu, uint8_t port) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Setting carry to 1", ii.instruction);
+#ifdef DEBUG
+    LOG_DEBUG(cpu->regs.pc, "%s: IN port %" PRIu8, ii.instruction, port);
 #endif
-    cpu->regs.f.carry = 1;
-    cpu->regs.pc += INSTR_SIZE(cpu);
+    LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction - IN port %" PRIu8, ii.instruction, port);
+    return;
+}
+
+void out(intel8080 *cpu, uint8_t port) {
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
+#ifdef DEBUG
+    LOG_DEBUG(cpu->regs.pc, "%s: OUT port %" PRIu8, ii.instruction, port);
+#endif
+    LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction - OUT port %" PRIu8, ii.instruction, port);
+    return;
 }
 
 void hlt(intel8080 *cpu) {
@@ -1587,30 +1614,4 @@ void generate_interrupt(intel8080 *cpu, uint8_t opcode) {
     LOG_DEBUG(cpu->regs.pc, "%s: Creating interrupt with opcode %" PRIu8, ii.instruction, opcode);
 #endif
     cpu->interrupt_vector = opcode;
-}
-
-void set_in(void (*in_function)(intel8080 *cpu, uint8_t port)) {
-    opcode_map[0xDB].handler.f1 = in_function;
-}
-
-void set_out(void (*out_function)(intel8080 *cpu, uint8_t port)) {
-    opcode_map[0xD3].handler.f1 = out_function;
-}
-
-void in(intel8080 *cpu, uint8_t port) {
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-#ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "%s: IN port %" PRIu8, ii.instruction, port);
-#endif
-    LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction - IN port %" PRIu8, ii.instruction, port);
-    return;
-}
-
-void out(intel8080 *cpu, uint8_t port) {
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
-#ifdef DEBUG
-    LOG_DEBUG(cpu->regs.pc, "%s: OUT port %" PRIu8, ii.instruction, port);
-#endif
-    LOG_WARNING(cpu->regs.pc, "%s: Unimplemented instruction - OUT port %" PRIu8, ii.instruction, port);
-    return;
 }
