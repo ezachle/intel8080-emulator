@@ -231,7 +231,6 @@ instr_info_t opcode_map[0x100] = {
     [0x21] = {"LXI H, d16", 3, 10, MAKE_FLAG_NONE, {.f2 = lxi}},
     [0x31] = {"LXI SP, d16", 3, 10, MAKE_FLAG_NONE, {.f2 = lxi}},
 
-
     [0x32] = {"STA a16", 3, 13, MAKE_FLAG_NONE, {.f2 = sta}},
     [0x3A] = {"LDA a16", 3, 13, MAKE_FLAG_NONE, {.f2 = lda}},
 
@@ -314,7 +313,6 @@ instr_info_t opcode_map[0x100] = {
     [0xE5] = {"PUSH H", 1, 11, MAKE_FLAG_NONE, {.f0 = push}},
     [0xF5] = {"PUSH PSW", 1, 11, MAKE_FLAG_ALL, {.f0 = push}},
 
-
     // d8 == port - yields a number froms 0x00 to 0xFF
     [0xD3] = {"OUT d8", 2, 10, MAKE_FLAG_NONE, {.f1 = out}},
     [0xDB] = {"IN d8", 2, 10, MAKE_FLAG_NONE,  {.f1 = in}},
@@ -335,17 +333,21 @@ typedef enum {
     REG_A = 7,
 } registers;
 
-#define GET_SP(inc) (uint16_t)((cpu->regs.sp+inc) % 0x10000)
+#define GET_SP(inc) ((uint16_t)(cpu->regs.sp+inc))
 
-#define POP_SP(cpu, data)               \
-    data = (get_byte(cpu, GET_SP(0)) |  \
-    (get_byte(cpu, GET_SP(1)) << 8));   \
-    cpu->regs.sp += 2;                  \
+#define POP_SP(cpu, data)                   \
+    do {                                    \
+        data = (get_byte(cpu, GET_SP(0)) |  \
+        (get_byte(cpu, GET_SP(1)) << 8));   \
+        cpu->regs.sp += 2;                  \
+    } while(0);                             \
 
-#define PUSH_SP(cpu, data)                          \
-    cpu->regs.sp -= 2;                              \
-    write_byte(cpu, GET_SP(0), data & 0xFF);        \
-    write_byte(cpu, GET_SP(1), (data >> 8) & 0xFF); \
+#define PUSH_SP(cpu, data)                              \
+    do {                                                \
+        cpu->regs.sp -= 2;                              \
+        write_byte(cpu, GET_SP(0), data & 0xFF);        \
+        write_byte(cpu, GET_SP(1), (data >> 8) & 0xFF); \
+    } while(0);                                         \
 
 #define CUR_OP(cpu) ((cpu)->mem.data[(cpu)->regs.pc])
 #define GET_INSTR(op) (opcode_map[op])
@@ -355,6 +357,10 @@ typedef enum {
 #define FLAG_ACCESS(cpu) (GET_INSTR_CPU(cpu).flag_access)
 #define HAS_ACCESS(flag_access, x) (flag_access & (1 << x))
 #define SET_FLAG(flags, x) (flags |= (1 << x))
+
+// Note, one difference I noticed between MAME logs and my
+// implementation is that it sets the unused1 to 0 after
+// an ANI (and similiar ALU isntructions). why?
 #define SET_UNUSED(flags) \
     flags.unused1 = 1; \
     flags.unused2 = 0; \
@@ -415,8 +421,8 @@ static void modify_flags(uint8_t value, registers_t *regs, const uint8_t flag_ac
         regs->f.zero = (value == 0) ? 1 : 0;
     }
 
-    // 0 == Even Parity
-    // 1 == Odd Parity
+    // 1 == Even Parity
+    // 0 == Odd Parity
     if(HAS_ACCESS(flag_access, PARITY)) {
         uint8_t x = value;
         x ^= (x >> 4);
@@ -959,7 +965,7 @@ void stax(intel8080 *cpu) {
 void xthl(intel8080 *cpu) {
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP(0x%02X) and SP+1(0x%02X)", ii.instruction, cpu->regs.hl, get_byte(cpu, cpu->regs.sp), get_byte(cpu, cpu->regs.sp+1);
+    LOG_DEBUG(cpu->regs.pc, "%s: Swapping registers HL(0x%04X) with SP(0x%02X) and SP+1(0x%02X)", ii.instruction, cpu->regs.hl, get_byte(cpu, GET_SP(0)), get_byte(cpu, GET_SP(1));
 #endif
     swap_u8(&cpu->regs.l, &cpu->mem.data[GET_SP(0)]);
     swap_u8(&cpu->regs.h, &cpu->mem.data[GET_SP(1)]);
@@ -1002,7 +1008,7 @@ void pchl(intel8080 *cpu) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Setting PC to contents of HL(0x%02X)", ii.instruction, cpu->regs.hl); 
 #endif
-    cpu->regs.pc = cpu->regs.hl;
+    jmp(cpu, cpu->regs.hl);
 }
 
 void sphl(intel8080 *cpu) {
@@ -1501,29 +1507,7 @@ void rar(intel8080* cpu) {
 
 void pop(intel8080 *cpu) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
-    uint16_t *reg_ptr = NULL;
-    switch(OP_DST_REG(cpu)) {
-        case REG_B:
-        case REG_C:
-            reg_ptr = &cpu->regs.bc;
-            break;
-        case REG_E:
-        case REG_D:
-            reg_ptr = &cpu->regs.de;
-            break;
-        case REG_L:
-        case REG_H:
-            reg_ptr = &cpu->regs.hl;
-            break;
-        case REG_M:
-        case REG_A:
-            reg_ptr = &cpu->regs.psw;
-            break;
-        default:
-            fprintf(stderr, "ERROR Unknown POP instruction: %2X\n", CUR_OP(cpu));
-            break;
-    }
-
+    uint16_t *reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
     POP_SP(cpu, *reg_ptr);
     SET_UNUSED(cpu->regs.f)
 
@@ -1534,16 +1518,7 @@ void pop(intel8080 *cpu) {
 }
 
 void push(intel8080 *cpu) {
-    uint16_t *reg_ptr = NULL;
-    switch(OP_DST_REG(cpu)){
-        case REG_M:
-        case REG_A:
-            reg_ptr = &cpu->regs.psw;
-            break;
-        default:
-            reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
-            break;
-    }
+    uint16_t *reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
 #ifdef DEBUG
     instr_info_t ii = GET_INSTR_CPU(cpu);
     const uint8_t *instr = &cpu->mem.data[cpu->regs.pc];
@@ -1613,5 +1588,6 @@ void generate_interrupt(intel8080 *cpu, uint8_t opcode) {
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Creating interrupt with opcode %" PRIu8, ii.instruction, opcode);
 #endif
+
     cpu->interrupt_vector = opcode;
 }
