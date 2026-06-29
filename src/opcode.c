@@ -515,11 +515,15 @@ void rst0(intel8080 *cpu) {
 }
 
 void rst1(intel8080 *cpu) {
-    call(cpu, 0xCF & 0x38);
+    //call(cpu, 0xCF & 0x38);
+    PUSH_SP(cpu, cpu->regs.pc);
+    cpu->regs.pc = 0xCF & 0x38;
 }
 
 void rst2(intel8080 *cpu) {
-    call(cpu, 0xD7 & 0x38);
+    //call(cpu, 0xD7 & 0x38);
+    PUSH_SP(cpu, cpu->regs.pc);
+    cpu->regs.pc = 0xD7 & 0x38;
 }
 
 void rst3(intel8080 *cpu) {
@@ -646,7 +650,7 @@ void cnz(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -660,7 +664,7 @@ void cnc(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -674,7 +678,7 @@ void cpo(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -688,7 +692,7 @@ void cp(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -702,7 +706,7 @@ void cz(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -716,7 +720,7 @@ void cc(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -730,7 +734,7 @@ void cpe(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -744,7 +748,7 @@ void cm(intel8080 *cpu, uint16_t addr) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
         call(cpu, addr);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 16;
+        opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -769,7 +773,7 @@ void rz(intel8080 *cpu) {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         ret(cpu);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
+        opcode_map[CUR_OP(cpu)].cycles = 5;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -783,7 +787,7 @@ void rc(intel8080 *cpu) {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         ret(cpu);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
+        opcode_map[CUR_OP(cpu)].cycles = 5;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -797,7 +801,7 @@ void rpe(intel8080 *cpu) {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         ret(cpu);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
+        opcode_map[CUR_OP(cpu)].cycles = 5;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
@@ -811,7 +815,7 @@ void rm(intel8080 *cpu) {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         ret(cpu);
     } else {
-        opcode_map[CUR_OP(cpu)].cycles = 6;
+        opcode_map[CUR_OP(cpu)].cycles = 5;
         cpu->regs.pc += INSTR_SIZE(cpu);
     }
 }
