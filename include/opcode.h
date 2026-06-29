@@ -117,7 +117,8 @@ void cc(intel8080 *cpu, uint16_t addr);
 void cpe(intel8080 *cpu, uint16_t addr);
 void cm(intel8080 *cpu, uint16_t addr);
 
-void call(intel8080 *cpu, uint16_t data);
+void call_helper(intel8080 *cpu, uint16_t addr);
+void call(intel8080 *cpu, uint16_t addr, uint16_t ret_addr);
 void ret(intel8080 *cpu);
 // RST  Restart instr used woth interrupts
 void rst0(intel8080 *cpu);

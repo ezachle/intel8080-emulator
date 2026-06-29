@@ -170,18 +170,18 @@ void emulate_8080(intel8080 *cpu) {
 
     uint16_t *pc = &cpu->regs.pc;
     uint8_t *instr = &memory->data[*pc];
+    instr_info_t ii = opcode_map[instr[0]];
 
     if(cpu->ei && cpu->interrupt_vector) {
         cpu->ei = false;
         cpu->is_halted = false;
-        const instr_info_t ii = opcode_map[cpu->interrupt_vector];
+        ii = opcode_map[cpu->interrupt_vector];
         cpu->interrupt_vector = 0;
         ii.handler.f0(cpu);
     } else {
         if(cpu->is_halted)
             return;
 
-        const instr_info_t ii = opcode_map[instr[0]];
         if(ii.op_bytes <= 0) {
             LOG_WARNING(cpu->regs.pc, "Unimplemented opcode: %02X", instr[0]);
             *pc += 1;
@@ -229,8 +229,7 @@ void emulate_8080(intel8080 *cpu) {
             } else {
                 cpu->regs.pc += ii.op_bytes;
             }
-
-            cpu->cycles += ii.cycles;
         }
     }
+    cpu->cycles += ii.cycles;
 }

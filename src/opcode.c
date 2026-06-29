@@ -39,10 +39,10 @@ instr_info_t opcode_map[0x100] = {
     [0xFA] = {"JM a16", 3, 10, MAKE_FLAG_NONE, {.f2 = jm}},
 
     // ==== Call and Return Group ====
-    [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
-    [0xDD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
-    [0xED] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
-    [0xFD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call}},
+    [0xCD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call_helper}},
+    [0xDD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call_helper}},
+    [0xED] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call_helper}},
+    [0xFD] = {"CALL a16", 3, 17, MAKE_FLAG_NONE, {.f2 = call_helper}},
     [0xC4] = {"CNZ a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnz}},
     [0xD4] = {"CNC a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cnc}},
     [0xE4] = {"CPO a16", 3, 11, MAKE_FLAG_NONE, {.f2 = cpo}},
@@ -512,43 +512,35 @@ static uint8_t get_byte(intel8080 *cpu, uint16_t addr) {
 
 #define RST_INSTR(opcode) (opcode & 0x38)
 void rst0(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xC7);
+    call(cpu, RST_INSTR(0xC7), cpu->regs.pc);
 }
 
 void rst1(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xCF);
+    call(cpu, RST_INSTR(0xCF), cpu->regs.pc);
 }
 
 void rst2(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xD7);
+    call(cpu, RST_INSTR(0xD7), cpu->regs.pc);
 }
 
 void rst3(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xDF);
+    call(cpu, RST_INSTR(0xDF), cpu->regs.pc);
 }
 
 void rst4(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xE7);
+    call(cpu, RST_INSTR(0xE7), cpu->regs.pc);
 }
 
 void rst5(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xEF);
+    call(cpu, RST_INSTR(0xEF), cpu->regs.pc);
 }
 
 void rst6(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xF7);
+    call(cpu, RST_INSTR(0xF7), cpu->regs.pc);
 }
 
 void rst7(intel8080 *cpu) {
-    PUSH_SP(cpu, cpu->regs.pc);
-    cpu->regs.pc = RST_INSTR(0xFF);
+    call(cpu, RST_INSTR(0xFF), cpu->regs.pc);
 }
 
 void jmp(intel8080 *cpu, uint16_t addr) {
@@ -631,14 +623,18 @@ void jm(intel8080 *cpu, uint16_t addr) {
     else cpu->regs.pc += INSTR_SIZE(cpu);
 }
 
-void call(intel8080 *cpu, uint16_t addr) {
+void call_helper(intel8080 *cpu, uint16_t addr) {
+    call(cpu, addr, cpu->regs.pc + INSTR_SIZE(cpu));
+}
+
+void call(intel8080 *cpu, uint16_t addr, uint16_t ret_addr) {
 #ifdef DEBUG
     const instr_info_t ii = GET_INSTR_CPU(cpu);
     const uint16_t old_pc = cpu->regs.pc;
     LOG_DEBUG(cpu->regs.pc, "%s: Calling method at address 0x%04X", ii.instruction, addr);
 #endif
     cpu->regs.pc += INSTR_SIZE(cpu);
-    PUSH_SP(cpu, cpu->regs.pc);
+    PUSH_SP(cpu, ret_addr);
 #ifdef DEBUG
     LOG_DEBUG(old_pc, "%s: Pushing PC(0x%04X) at SP 0x%02X", ii.instruction, cpu->regs.pc, GET_SP(-1));
 #endif
@@ -653,7 +649,7 @@ void cnz(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.zero == 0) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
@@ -667,7 +663,7 @@ void cnc(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.carry == 0) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
@@ -681,7 +677,7 @@ void cpo(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.parity == 0) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
@@ -695,7 +691,7 @@ void cp(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.sign == 0) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
@@ -709,7 +705,7 @@ void cz(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.zero == 1) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
@@ -723,7 +719,7 @@ void cc(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.carry == 1) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
@@ -737,7 +733,7 @@ void cpe(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.parity == 1) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
@@ -751,7 +747,7 @@ void cm(intel8080 *cpu, uint16_t addr) {
 #endif
     if(cpu->regs.f.sign == 1) {
         opcode_map[CUR_OP(cpu)].cycles = 17;
-        call(cpu, addr);
+        call_helper(cpu, addr);
     } else {
         opcode_map[CUR_OP(cpu)].cycles = 11;
         cpu->regs.pc += INSTR_SIZE(cpu);
