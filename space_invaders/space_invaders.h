@@ -11,17 +11,17 @@ typedef struct {
     struct {
         Color       frame_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
         uint8_t     scale_factor;
+
+        uint8_t port1;
+        uint8_t port2;
     } io;
 
     uint8_t shift0;         // LSB of the machine's shift hardware
     uint8_t shift1;         // MSB
     uint8_t shift_offset;   // Offset for machines shift hardware
 
-    uint8_t port1;
-    uint8_t port2;
-
     Texture2D texture;
-    intel8080 i8080;
+    intel8080 *i8080;
 } SpaceInvaders;
 
 /*

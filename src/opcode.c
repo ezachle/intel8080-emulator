@@ -911,7 +911,6 @@ void lxi(intel8080 *cpu, uint16_t data) {
     instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Copying data 0x%04X into register/SP", ii.instruction, data);
 #endif
-    uint8_t opcode = CUR_OP(cpu);
     uint16_t *reg_ptr = NULL;
     switch(OP_DST_REG(cpu)){
         case REG_M:
@@ -1511,12 +1510,12 @@ void rar(intel8080* cpu) {
 }
 
 void pop(intel8080 *cpu) {
-    const instr_info_t ii = GET_INSTR_CPU(cpu);
     uint16_t *reg_ptr = get_register_u16(cpu, OP_DST_REG(cpu));
     POP_SP(cpu, *reg_ptr);
     SET_UNUSED(cpu->regs.f)
 
 #ifdef DEBUG
+    const instr_info_t ii = GET_INSTR_CPU(cpu);
     LOG_DEBUG(cpu->regs.pc, "%s: Popping data(0x%02X) from stack", ii.instruction, *reg_ptr);
 #endif
     cpu->regs.pc += INSTR_SIZE(cpu);

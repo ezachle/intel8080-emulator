@@ -128,6 +128,7 @@ static bool handle_cpm(intel8080 *cpu) {
 #endif
 
 bool run_cpm_tests(intel8080 *cpu) {
+    (void)(cpu);
 #ifdef CPM
     bool rc = run_test(cpu, "cpu_tests/TST8080.COM");
     if(!rc) return false;

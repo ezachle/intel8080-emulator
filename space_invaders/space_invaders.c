@@ -3,73 +3,49 @@
 #include "opcode.h"
 
 static void handle_input(SpaceInvaders *machine) {
-    // test setting to 0?
-    //  prediction is there might be a stutter....
     uint8_t port1 = 0x03;
     uint8_t port2 = 0;
 
-    uint16_t keycode = GetKeyPressed();
-    switch(keycode) {
-        case KEY_C:
-            port1 |= CREDIT;
-            break;
-        case KEY_ESCAPE:
-            machine->i8080.quit = true;
-            break;
-        case KEY_ONE:
-            port1 |= START_1P;
-            break;
-        case KEY_TWO:
-            port2 |= START_2P;
-            break;
-        case KEY_LEFT:
-            port1 |= LEFT_1P;
-            port2 |= LEFT_2P;
-            break;
-        case KEY_RIGHT:
-            port1 |= RIGHT_1P;
-            port2 |= RIGHT_2P;
-            break;
-        case KEY_SPACE:
-            port1 |= SHOOT_1P;
-            port2 |= SHOOT_2P;
-            break;
-        default:
-            break;
-    };
+    if(IsKeyDown(KEY_ESCAPE)) machine->i8080->quit = true;
+    if(IsKeyDown(KEY_C)) port1 |= CREDIT;
+    if(IsKeyDown(KEY_ONE)) port1 = START_1P;
+    if(IsKeyDown(KEY_TWO)) port2 |= START_2P;
+    if(IsKeyDown(KEY_LEFT)) { port1 |= LEFT_1P; port2 |= LEFT_2P; }
+    if(IsKeyDown(KEY_RIGHT)) { port1 |= RIGHT_1P; port2 |= RIGHT_2P; }
+    if(IsKeyDown(KEY_SPACE)) { port1 |= SHOOT_1P; port2 |= SHOOT_2P; }
 
-    machine->port1 = port1;
-    machine->port2 = port2;
+    machine->io.port1 = port1;
+    machine->io.port2 = port2;
+}
+
+static void clear_buffer(SpaceInvaders *machine) {
+    memset(machine->io.frame_buffer, 0, sizeof(Color) * SCREEN_WIDTH * SCREEN_HEIGHT);
 }
 
 static void update_display(SpaceInvaders *machine) {
     /*
-     * Screen was physically rotated counter-CW. (0,0) instead started
-     * on the bottom left.
+     * Original CRT monitor was using a 256x224 monitor but is rotated
+     * counter-clockwise 90 deg and is instead 224x256.
+     *  - frame buffer is described as 224 rows and 256 columns.
+     *  - each byte represents 8 vertical pixels in a column
      */
     Color *fb      = &machine->io.frame_buffer[0];
-    uint8_t *vram    = &machine->i8080.mem.data[VRAM_START]; // VRAM start 0x2400 - 0x3FFF
-    uint8_t  scale   = machine->io.scale_factor;
+    uint8_t *vram    = &machine->i8080->mem.data[VRAM_START]; // VRAM start 0x2400 - 0x3FFF
 
-    memset(fb, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
+    clear_buffer(machine);
 
     for(uint16_t i = 0; i < VRAM_SIZE; i++) {
-        // Program sees it as (x,y) = (256,224)
-        // while the rotated CRT    = (224,256)
-        // x runs horizontally from left
-        // y runs vertically from top
-        // rows are in 8-bit chunks
         uint8_t byte = vram[i];
 
-        // iterate through each bit in the byte
-        for(uint8_t bit = 0; bit < 8; bit++) {
-            int x = (i % 32) * 8 + bit;
-            int y = i / 32;
+        int x = (i % 32); // vertical pixel offset
+        int y = i / 32;   // track rows
 
+        for(uint8_t bit = 0; bit < 8; bit++) {
             Color pixel = ((byte >> bit) & 1) ? WHITE : BLACK;
 
+            // rotate the screen here
             int screen_x = y;
-            int screen_y = 255 - x;
+            int screen_y = 255 - (x * 8 + bit);
             fb[screen_x + screen_y * SCREEN_WIDTH] = pixel;
         }
     }
@@ -89,10 +65,10 @@ void space_invaders_in(intel8080 *i8080, uint8_t port) {
     SpaceInvaders *machine = (SpaceInvaders*)i8080->userdata;
     switch(port) {
         case 0x01:
-            i8080->regs.a = machine->port1;
+            i8080->regs.a = machine->io.port1;
             break;
         case 0x02:
-            i8080->regs.a = machine->port2;
+            i8080->regs.a = machine->io.port2;
             break;
         case 0x03:
             // dedicated shift HW to position a 8-bit pixel image into a 16-bit word
@@ -133,11 +109,12 @@ void space_invaders_out(intel8080 *i8080, uint8_t port) {
 }
 
 static bool init_space_invaders(SpaceInvaders *machine) {
-    if(!init_8080(&machine->i8080, "./space_invaders/rom/invaders.rom", 0x0000, machine)) {
+    machine->i8080 = (intel8080*)malloc(sizeof(intel8080));
+    if(!init_8080(machine->i8080, "./space_invaders/rom/invaders.rom", 0x0000, machine)) {
         return false;
     }
 
-    memset(machine->io.frame_buffer, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
+    clear_buffer(machine);
     machine->io.scale_factor = 3;
 
     set_in(space_invaders_in);
@@ -147,18 +124,19 @@ static bool init_space_invaders(SpaceInvaders *machine) {
 }
 
 static void destroy_space_invaders(SpaceInvaders *machine) {
-    destroy_8080(&machine->i8080);
+    destroy_8080(machine->i8080);
     UnloadTexture(machine->texture);
-    memset(machine->io.frame_buffer, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
+    free(machine->i8080);
+    clear_buffer(machine);
 }
 
 int main() {
     SpaceInvaders machine;
-    intel8080 *i8080 = &machine.i8080;
-
     if(!init_space_invaders(&machine)) {
         return EXIT_FAILURE;
     }
+
+    intel8080 *i8080 = machine.i8080;
 
     InitWindow(SCREEN_WIDTH * machine.io.scale_factor, SCREEN_HEIGHT * machine.io.scale_factor, "Space Invaders");
     SetTargetFPS(FPS);
@@ -172,7 +150,6 @@ int main() {
     /*
      * 2MHz == 2,000,000 hz / 60 FPS = 33,3333 instructions per frame
      * Frame time = 1 second / 60 FPS = 16.6667 ms
-     *
      *
      * CRT displays images line by line, from top to bottom, then returns to
      * the top through a vertical blank interrupt. 

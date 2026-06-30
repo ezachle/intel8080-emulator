@@ -2,7 +2,7 @@ CC := gcc
 
 INCL := include
 # maybe -Wall?
-CFLAGS := -Wextra -Werror -I$(INCL)
+CFLAGS := -Wall -Wextra -Werror -I$(INCL)
 
 RAYLIB_CFLAGS := $(shell pkg-config --cflags raylib)
 RAYLIB_LDFLAGS := $(shell pkg-config --libs raylib) -lm -lX11
