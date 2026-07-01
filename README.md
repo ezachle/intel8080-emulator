@@ -1,12 +1,15 @@
-# Intel8080 Emulator
+# Space Invaders and Intel8080 Emulator
 
 An Intel 8080 Emulator written in C. The project implements its CPU instructions,
 CPU diagnostic tests for validation, and Raylib for rendering video and audio.
+
+![](./screenshots/demo.gif)
 
 ## Features
 - Full CPU Emulation - including register and flag state
 - Loads ROM from command line
 - CPU test ROMs for validation
+- Space Invaders arcade machine emulator with display and interrupt timing
 
 ## Installation
 
@@ -40,6 +43,8 @@ cd intel8080-emulator
 make
 ./Intel8080 <path to ROM>
 ```
+`make SpaceInvaders` for Space Invaders Emulator
+`make CPM` for CPU tests.
 
 ## Testing
 CPU validation tests are found in the `cpu_tests/` directory. These ROMs
@@ -184,6 +189,24 @@ Tests complete
 
 </details>
 
+## Space Invaders
+
+ROM and the SFX must be obtained on your own, and loaded into the directories:
+  - `./intel8080/space_invaders/rom/invaders.rom`
+    - once you have the files you can do:
+        `cat invaders.h invader.g invaders.f invaders.e > invaders.rom`
+  - `./intel8080/space_invaders/sfx/`
+     - SFX files must be labeled through `0-8.wav` i.e. `0.wav, 1.wav, etc.`
+
+| Controls       | Action       |
+|----------------|--------------|
+| `ESC`          | Quit Game    |
+| `C`            | Insert Coin  |
+| `1`            | 1P Start     |
+| `2`            | 2P Start     |
+| `Left Arrow`   | Move Left    |
+| `Right Arrow`  | Move Right   |
+
 ## References
 - Opcode Map table (Intel 8080 OPCODES.pdf)
 - Intel 8080 Programmer's Manual (Intel8080.pdf)
@@ -191,12 +214,8 @@ Tests complete
 - 80/85 Family User Manual
   - Contains additional info on ANA and ANI instruction, where the AC is set
     to the OR'ing of bits 3 of the operands (page 95).
+- [Computer Archeology Space Invaders](https://www.computerarcheology.com/Arcade/SpaceInvaders)
+  - Provides information on the shift hardware logic, hardware info, IO actions, and interrupt logic.
 
 ## Current Status
-Primary goal was to pass the validation tests.
-The following functionality is still incomplete:
-- `OUT` instruction implementation
-- `IN` instruction implementation
-- I/O port handling
-- Raylib-based video rendering
-- Hardware integration required for running Space Invaders
+Primary goal is done, space invaders emulator is completed
