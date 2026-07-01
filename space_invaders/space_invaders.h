@@ -1,19 +1,24 @@
+#pragma once
+
 #include "raylib.h"
 #include "intel8080.h"
 
-#define FPS (60)
-#define FRAME_TIME (1/FPS)
+#define FPS             (60)
+#define FRAME_TIME      (1/FPS)
 #define INSTR_PER_FRAME (CPU_MHZ / FPS)
-#define SCREEN_WIDTH    224
-#define SCREEN_HEIGHT   256
+#define SCREEN_WIDTH    (224)
+#define SCREEN_HEIGHT   (256)
 
 typedef struct {
     struct {
         Color       frame_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
         uint8_t     scale_factor;
 
-        uint8_t port1;
-        uint8_t port2;
+        uint8_t in_port1;
+        uint8_t in_port2;
+        
+        uint8_t out_port3;
+        uint8_t out_port5;
     } io;
 
     uint8_t shift0;         // LSB of the machine's shift hardware
@@ -25,6 +30,8 @@ typedef struct {
 } SpaceInvaders;
 
 /*
+ * See
+ *  https://www.computerarcheology.com/Arcade/SpaceInvaders/Hardware.html
  *
  * Read
  * ============

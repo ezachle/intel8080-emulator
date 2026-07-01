@@ -4,6 +4,11 @@
 
 int main(int argc, char *argv[]) {
     intel8080 cpu;
+    if(argc != 2) {
+        fprintf(stderr, "Intel8080: No ROM is provided!\n");
+        fprintf(stderr, "usage: ./Intel8080 <path to ROM>\n");
+        return EXIT_FAILURE;
+    }
 
     bool rc = true;
 #ifdef CPM
@@ -21,5 +26,5 @@ int main(int argc, char *argv[]) {
         }
     }
     destroy_8080(&cpu);
-    return 1;
+    return EXIT_SUCCESS;;
 }

@@ -3,19 +3,19 @@
 #include "opcode.h"
 
 static void handle_input(SpaceInvaders *machine) {
-    uint8_t port1 = 0x03;
+    uint8_t port1 = 0x08;
     uint8_t port2 = 0;
 
     if(IsKeyDown(KEY_ESCAPE)) machine->i8080->quit = true;
     if(IsKeyDown(KEY_C)) port1 |= CREDIT;
-    if(IsKeyDown(KEY_ONE)) port1 = START_1P;
-    if(IsKeyDown(KEY_TWO)) port2 |= START_2P;
+    if(IsKeyDown(KEY_ONE)) port1 |= START_1P;
+    if(IsKeyDown(KEY_TWO)) port1 |= START_2P;
     if(IsKeyDown(KEY_LEFT)) { port1 |= LEFT_1P; port2 |= LEFT_2P; }
     if(IsKeyDown(KEY_RIGHT)) { port1 |= RIGHT_1P; port2 |= RIGHT_2P; }
     if(IsKeyDown(KEY_SPACE)) { port1 |= SHOOT_1P; port2 |= SHOOT_2P; }
 
-    machine->io.port1 = port1;
-    machine->io.port2 = port2;
+    machine->io.in_port1 = port1;
+    machine->io.in_port2 = port2;
 }
 
 static void clear_buffer(SpaceInvaders *machine) {
@@ -50,7 +50,7 @@ static void update_display(SpaceInvaders *machine) {
         }
     }
 
-    UpdateTexture(machine->texture, fb);
+    UpdateTexture(machine->assets.texture, fb);
 }
 
 void space_invaders_in(intel8080 *i8080, uint8_t port) {
@@ -65,10 +65,10 @@ void space_invaders_in(intel8080 *i8080, uint8_t port) {
     SpaceInvaders *machine = (SpaceInvaders*)i8080->userdata;
     switch(port) {
         case 0x01:
-            i8080->regs.a = machine->io.port1;
+            i8080->regs.a = machine->io.in_port1;
             break;
         case 0x02:
-            i8080->regs.a = machine->io.port2;
+            i8080->regs.a = machine->io.in_port2;
             break;
         case 0x03:
             // dedicated shift HW to position a 8-bit pixel image into a 16-bit word
@@ -131,9 +131,11 @@ static void destroy_space_invaders(SpaceInvaders *machine) {
 }
 
 int main() {
+    uint8_t rc = EXIT_SUCCESS;
     SpaceInvaders machine;
     if(!init_space_invaders(&machine)) {
-        return EXIT_FAILURE;
+        rc = EXIT_FAILURE;
+        goto EXIT;
     }
 
     intel8080 *i8080 = machine.i8080;
@@ -162,8 +164,8 @@ int main() {
      *
      */
     while(!WindowShouldClose() && !i8080->quit) {
-        last_frame = GetTime();
         handle_input(&machine);
+        update_display(&machine);
 
         while(i8080->cycles < INSTR_PER_FRAME / 2) {
             emulate_8080(i8080);
@@ -175,22 +177,16 @@ int main() {
         }
         generate_interrupt(i8080, 0xD7); // RST 2
 
-        update_display(&machine);
-
 BeginDrawing();
         ClearBackground(BLACK);
-        DrawTextureEx(machine.texture, (Vector2){0,0}, 0, machine.io.scale_factor, WHITE);
+        DrawTextureEx(machine.assets.texture, (Vector2){0,0}, 0, machine.io.scale_factor, WHITE);
 EndDrawing();
-
-        double elapsed = GetTime() - last_frame;
-        if(elapsed < FRAME_TIME) {
-            WaitTime(FRAME_TIME - elapsed);
-        }
         i8080->cycles = 0;
     }
 
+EXIT:
     destroy_space_invaders(&machine);
     CloseWindow();
 
-    return EXIT_SUCCESS;
+    return rc;
 }
