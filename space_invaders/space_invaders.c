@@ -82,6 +82,7 @@ void space_invaders_in(intel8080 *i8080, uint8_t port) {
     }
 }
 
+#define BIT_SHIFT(val, x) (val >> x)
 void space_invaders_out(intel8080 *i8080, uint8_t port) {
     /*
      * Write
@@ -92,30 +93,102 @@ void space_invaders_out(intel8080 *i8080, uint8_t port) {
      * 06 watch-dog
      */
     SpaceInvaders *machine = (SpaceInvaders*)i8080->userdata;
+    Sound *game_sounds = machine->assets.game_sounds;
+    uint8_t val = i8080->regs.a;
+    uint8_t out_port = 0;
     switch(port) {
         case 0x02:
-            machine->shift_offset = i8080->regs.a & 0x7;
+            machine->shift_offset = val & 0x7;
+            break;
+        case 0x03:
+            out_port = machine->io.out_port3;
+            if(!(out_port & SHOOT_SFX) && (val & SHOOT_SFX))
+                PlaySound(game_sounds[SHOOT]);
+            if(!(out_port & PLAYER_DIE_SFX) && (val & PLAYER_DIE_SFX))
+                PlaySound(game_sounds[PLAYER_DIE]);
+            if(val & UFO_SFX)
+                if(!IsSoundPlaying(game_sounds[UFO_LOWPITCH]))
+                    PlaySound(game_sounds[UFO_LOWPITCH]);
+            if(!(out_port & INVADER_DIE_SFX) && (val & INVADER_DIE_SFX))
+                if(!IsSoundPlaying(game_sounds[INVADER_KILLED]))
+                    PlaySound(game_sounds[INVADER_KILLED]);
+            machine->io.out_port3 = port;
             break;
         case 0x04:
             machine->shift0 = machine->shift1;
-            machine->shift1 = i8080->regs.a;
+            machine->shift1 = val;
             break;
-        case 0x03:
         case 0x05:
+            out_port = machine->io.out_port5;
+            if(!(out_port & FLEET_1) && (val & FLEET_1))
+                PlaySound(game_sounds[FAST_INVADER1]);
+            if(!(out_port & FLEET_2) && (val & FLEET_2))
+                PlaySound(game_sounds[FAST_INVADER2]);
+            if(!(out_port & FLEET_3) && (val & FLEET_3))
+                PlaySound(game_sounds[FAST_INVADER3]);
+            if(!(out_port & FLEET_4) && (val & FLEET_4))
+                PlaySound(game_sounds[FAST_INVADER4]);
+            if(!(out_port & UFO_HIT) && (val & UFO_HIT)) { 
+                if(!IsSoundPlaying(game_sounds[UFO_HIGHPITCH])) {
+                    StopSound(game_sounds[UFO_LOWPITCH]);
+                    PlaySound(game_sounds[UFO_HIGHPITCH]);
+                }
+            }
+            machine->io.out_port5 = port;
+            break;
         case 0x06:
         default:
             break;
     }
 }
 
+#define ASSETS_PATH(name) ("./space_invaders/" name)
+static bool load_assets(GameAssets *assets) {
+    Image blank = GenImageColor(SCREEN_WIDTH, SCREEN_HEIGHT, BLACK);
+    if(!blank.data) {
+        return false;
+    }
+    assets->texture = LoadTextureFromImage(blank);
+    UnloadImage(blank);
+
+    Sound *sounds_arr = &assets->game_sounds[0];
+    sounds_arr[UFO_HIGHPITCH]  = LoadSound(ASSETS_PATH("sfx/0.wav"));
+    sounds_arr[SHOOT]          = LoadSound(ASSETS_PATH("sfx/1.wav"));
+    sounds_arr[PLAYER_DIE]     = LoadSound(ASSETS_PATH("sfx/2.wav"));
+    sounds_arr[INVADER_KILLED] = LoadSound(ASSETS_PATH("sfx/3.wav"));
+    sounds_arr[FAST_INVADER1]  = LoadSound(ASSETS_PATH("sfx/4.wav"));
+    sounds_arr[FAST_INVADER2]  = LoadSound(ASSETS_PATH("sfx/5.wav"));
+    sounds_arr[FAST_INVADER3]  = LoadSound(ASSETS_PATH("sfx/6.wav"));
+    sounds_arr[FAST_INVADER4]  = LoadSound(ASSETS_PATH("sfx/7.wav"));
+    sounds_arr[UFO_LOWPITCH]   = LoadSound(ASSETS_PATH("sfx/8.wav"));
+
+    for(int i = 0; i < NUM_SOUNDS; i++) {
+        if(sounds_arr[i].stream.buffer == NULL) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool init_space_invaders(SpaceInvaders *machine) {
     machine->i8080 = (intel8080*)malloc(sizeof(intel8080));
+
     if(!init_8080(machine->i8080, "./space_invaders/rom/invaders.rom", 0x0000, machine)) {
         return false;
     }
 
-    clear_buffer(machine);
     machine->io.scale_factor = 3;
+    clear_buffer(machine);
+
+    InitWindow(SCREEN_WIDTH * machine->io.scale_factor, SCREEN_HEIGHT * machine->io.scale_factor, "Space Invaders");
+    SetTargetFPS(FPS);
+    InitAudioDevice();
+
+    if(!load_assets(&machine->assets)) {
+        fprintf(stderr, "Failed to load assets\n");
+        return false;
+    }
 
     set_in(space_invaders_in);
     set_out(space_invaders_out);
@@ -123,9 +196,18 @@ static bool init_space_invaders(SpaceInvaders *machine) {
     return true;
 }
 
+static void unload_assets(GameAssets *assets) {
+    UnloadTexture(assets->texture);
+
+    Sound *sounds_arr = &assets->game_sounds[0];
+    for(int i = 0; i < NUM_SOUNDS; i++) {
+        UnloadSound(sounds_arr[i]);
+    }
+}
+
 static void destroy_space_invaders(SpaceInvaders *machine) {
     destroy_8080(machine->i8080);
-    UnloadTexture(machine->texture);
+    unload_assets(&machine->assets);
     free(machine->i8080);
     clear_buffer(machine);
 }
@@ -139,15 +221,6 @@ int main() {
     }
 
     intel8080 *i8080 = machine.i8080;
-
-    InitWindow(SCREEN_WIDTH * machine.io.scale_factor, SCREEN_HEIGHT * machine.io.scale_factor, "Space Invaders");
-    SetTargetFPS(FPS);
-
-    Image blank = GenImageColor(SCREEN_WIDTH, SCREEN_HEIGHT, BLACK);
-    machine.texture = LoadTextureFromImage(blank);
-    UnloadImage(blank);
-
-    double last_frame = GetTime();
 
     /*
      * 2MHz == 2,000,000 hz / 60 FPS = 33,3333 instructions per frame

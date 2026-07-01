@@ -8,6 +8,25 @@
 #define INSTR_PER_FRAME (CPU_MHZ / FPS)
 #define SCREEN_WIDTH    (224)
 #define SCREEN_HEIGHT   (256)
+#define NUM_SOUNDS      (9)
+
+typedef enum {
+    UFO_HIGHPITCH = 0,
+    UFO_LOWPITCH,
+    SHOOT,
+    INVADER_KILLED,
+    FAST_INVADER1,
+    FAST_INVADER2,
+    FAST_INVADER3,
+    FAST_INVADER4,
+    PLAYER_DIE = 8,
+    UNKNOWN_SOUND = PLAYER_DIE - 1,
+} GameSounds;
+
+typedef struct {
+    Texture2D texture;
+    Sound game_sounds[NUM_SOUNDS];
+} GameAssets;
 
 typedef struct {
     struct {
@@ -25,7 +44,8 @@ typedef struct {
     uint8_t shift1;         // MSB
     uint8_t shift_offset;   // Offset for machines shift hardware
 
-    Texture2D texture;
+    GameAssets assets;
+
     intel8080 *i8080;
 } SpaceInvaders;
 
@@ -69,12 +89,12 @@ typedef enum {
     DIP7     	= (1 << 7),
 
     // OUT PORT 3
-    UFO_SFX     = (1 << 0),
-    SHOOT_SFX   = (1 << 1),
-    PLAYER_DIE  = (1 << 2),
-    INVADER_DIE = (1 << 3),
-    EXT_PLAY    = (1 << 4),
-    AMP_ENABLE  = (1 << 5),
+    UFO_SFX         = (1 << 0),
+    SHOOT_SFX       = (1 << 1),
+    PLAYER_DIE_SFX  = (1 << 2),
+    INVADER_DIE_SFX = (1 << 3),
+    EXT_PLAY        = (1 << 4),
+    AMP_ENABLE      = (1 << 5),
 
     // OUT PORT 5
     FLEET_1     = (1 << 0),
